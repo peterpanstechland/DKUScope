@@ -1,0 +1,18 @@
+{
+  "camera": {"index": 0, "width": 640, "height": 480, "fps": 30},
+  "grid": {"rows": 16, "cols": 16, "cell_gap_mm": 2.0, "border_mm": 50.0},
+  "block": {"block_studs_w": 6, "block_studs_h": 6, "block_size_cm": 4.8, "plate_studs_w": 6, "plate_studs_h": 6, "plate_size_cm": 4.8},
+  "calibration": {"enabled": false, "source_points": [], "destination_points": [], "output_width": 640, "output_height": 480},
+  "projection": {"enabled": false, "projector_camera_index": 1, "projector_width": 1920, "projector_height": 1080, "pattern_cols": 9, "pattern_rows": 6, "source_points": [], "destination_points": [], "warp_matrix": []},
+  "layout": {"enabled": false, "layout_rows": 1, "layout_cols": 1, "units": []},
+  "classes": [
+    {"class_id": 1, "label": "教学建筑", "label_en": "Academic", "color_name": "红色", "color_name_en": "Red", "color_hex": "#D73A49", "building_examples": "AB, 图书馆, IB", "building_examples_en": "AB, Library, IB", "is_fixed_default": false, "allowed_footprints": ["1x1","2x2","3x2"], "calibrated_lab": []},
+    {"class_id": 2, "label": "体育场地", "label_en": "Sports", "color_name": "咖啡色", "color_name_en": "Brown", "color_hex": "#8B5A2B", "building_examples": "室外体育场, 体育馆", "building_examples_en": "Outdoor Field, Gym", "is_fixed_default": false, "allowed_footprints": ["1x1","2x2"], "calibrated_lab": []},
+    {"class_id": 3, "label": "餐厅建筑", "label_en": "Dining", "color_name": "黄色", "color_name_en": "Yellow", "color_hex": "#F2CC0C", "building_examples": "CCTW", "building_examples_en": "CCTW", "is_fixed_default": false, "allowed_footprints": ["1x1","2x1"], "calibrated_lab": []},
+    {"class_id": 4, "label": "行政建筑", "label_en": "Administrative", "color_name": "黑色", "color_name_en": "Black", "color_hex": "#2F2F2F", "building_examples": "ADB, Service Building", "building_examples_en": "ADB, Service Building", "is_fixed_default": false, "allowed_footprints": ["1x1","2x1"], "calibrated_lab": []},
+    {"class_id": 5, "label": "生活服务", "label_en": "Residential", "color_name": "粉色", "color_name_en": "Pink", "color_hex": "#F7A1C4", "building_examples": "宿舍, SSH, CC", "building_examples_en": "Dorm, SSH, CC", "is_fixed_default": false, "allowed_footprints": ["1x1","2x2"], "calibrated_lab": []},
+    {"class_id": 6, "label": "绿地", "label_en": "Green Space", "color_name": "绿色", "color_name_en": "Green", "color_hex": "#2EA043", "building_examples": "", "building_examples_en": "", "is_fixed_default": false, "allowed_footprints": ["1x1","2x2","3x3"], "calibrated_lab": []},
+    {"class_id": 7, "label": "水体", "label_en": "Water", "color_name": "蓝色", "color_name_en": "Blue", "color_hex": "#1F6FEB", "building_examples": "", "building_examples_en": "", "is_fixed_default": false, "allowed_footprints": ["1x1","2x2","2x3","3x3"], "calibrated_lab": []},
+    {"class_id": 8, "label": "默认道路", "label_en": "Road", "color_name": "白色", "color_name_en": "White", "color_hex": "#F5F5F5", "building_examples": "", "building_examples_en": "", "is_fixed_default": false, "allowed_footprints": ["1x1"], "calibrated_lab": []}
+  ]
+}

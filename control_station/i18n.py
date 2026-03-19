@@ -1,0 +1,171 @@
+from __future__ import annotations
+
+from typing import Dict
+
+SUPPORTED_LANGUAGES = {"zh_CN": "中文", "en_US": "English"}
+_current_lang = "zh_CN"
+
+_STRINGS: Dict[str, Dict[str, str]] = {
+    "app_title": {"zh_CN": "DKUScope 上位机配置工具", "en_US": "DKUScope Control Station"},
+    "btn_load": {"zh_CN": "加载配置", "en_US": "Load Config"},
+    "btn_save": {"zh_CN": "保存配置", "en_US": "Save Config"},
+    "btn_save_default": {"zh_CN": "保存到默认路径", "en_US": "Save Default"},
+    "btn_reset_form": {"zh_CN": "从表单重置", "en_US": "Reset Form"},
+    "status_ready": {"zh_CN": "就绪", "en_US": "Ready"},
+    "tab_general": {"zh_CN": "基础参数", "en_US": "General"},
+    "tab_classes": {"zh_CN": "房屋与颜色定义", "en_US": "Building Classes"},
+    "tab_layout": {"zh_CN": "布局与拼接", "en_US": "Layout"},
+    "panel_camera": {"zh_CN": "摄像头", "en_US": "Camera"},
+    "lbl_camera": {"zh_CN": "相机", "en_US": "Cam"},
+    "btn_refresh": {"zh_CN": "刷新", "en_US": "Scan"},
+    "btn_test": {"zh_CN": "测试", "en_US": "Test"},
+    "lbl_width": {"zh_CN": "宽", "en_US": "W"},
+    "lbl_height": {"zh_CN": "高", "en_US": "H"},
+    "chk_grid_overlay": {"zh_CN": "叠加网格线", "en_US": "Grid Overlay"},
+    "btn_bottom_calib": {"zh_CN": "桌下相机标定", "en_US": "Bottom Camera Calibration"},
+    "panel_proj_calib": {"zh_CN": "投影标定", "en_US": "Projection Calibration"},
+    "lbl_proj_cam": {"zh_CN": "投影相机", "en_US": "Proj Cam"},
+    "lbl_resolution": {"zh_CN": "分辨率", "en_US": "Res"},
+    "btn_proj_calib": {"zh_CN": "投影映射标定", "en_US": "Run Projection Calibration"},
+    "not_calibrated": {"zh_CN": "未标定", "en_US": "Not calibrated"},
+    "calibrated_fmt": {"zh_CN": "已标定 ({w}x{h})", "en_US": "Calibrated ({w}x{h})"},
+    "sect_grid": {"zh_CN": "网格与尺寸设置", "en_US": "Grid & Sizing"},
+    "lbl_grid_rows": {"zh_CN": "网格行数", "en_US": "Grid Rows"},
+    "lbl_grid_cols": {"zh_CN": "网格列数", "en_US": "Grid Cols"},
+    "lbl_grid_gap": {"zh_CN": "网格间距(mm)", "en_US": "Cell Gap (mm)"},
+    "lbl_border": {"zh_CN": "四周边框(mm)", "en_US": "Border (mm)"},
+    "sect_block": {"zh_CN": "Block / Plate 设置", "en_US": "Block / Plate"},
+    "lbl_block_w": {"zh_CN": "Block 宽(studs)", "en_US": "Block W (studs)"},
+    "lbl_block_h": {"zh_CN": "Block 高(studs)", "en_US": "Block H (studs)"},
+    "lbl_block_cm": {"zh_CN": "Block 边长(cm)", "en_US": "Block Size (cm)"},
+    "lbl_plate_w": {"zh_CN": "Plate 宽(studs)", "en_US": "Plate W (studs)"},
+    "lbl_plate_h": {"zh_CN": "Plate 高(studs)", "en_US": "Plate H (studs)"},
+    "lbl_plate_cm": {"zh_CN": "Plate 边长(cm)", "en_US": "Plate Size (cm)"},
+    "col_class_id": {"zh_CN": "类型编号", "en_US": "Class ID"},
+    "col_label": {"zh_CN": "建筑类型", "en_US": "Type"},
+    "col_color_name": {"zh_CN": "颜色名称", "en_US": "Color"},
+    "col_color_hex": {"zh_CN": "颜色HEX", "en_US": "HEX"},
+    "col_calib_lab": {"zh_CN": "标定Lab", "en_US": "Calib Lab"},
+    "col_examples": {"zh_CN": "具体建筑", "en_US": "Examples"},
+    "col_fixed": {"zh_CN": "固定单元", "en_US": "Fixed"},
+    "col_footprints": {"zh_CN": "可用占位", "en_US": "Footprints"},
+    "lbl_edit": {"zh_CN": "编辑项", "en_US": "Editor"},
+    "lbl_class_id": {"zh_CN": "类型编号", "en_US": "Class ID"},
+    "lbl_building_type": {"zh_CN": "建筑类型", "en_US": "Building Type"},
+    "lbl_color_name": {"zh_CN": "颜色名称", "en_US": "Color Name"},
+    "lbl_color_hex": {"zh_CN": "颜色HEX", "en_US": "Color HEX"},
+    "lbl_examples": {"zh_CN": "具体建筑", "en_US": "Examples"},
+    "lbl_footprints": {"zh_CN": "占位规则(逗号分隔)", "en_US": "Footprints (comma)"},
+    "lbl_calib_lab": {"zh_CN": "标定Lab值", "en_US": "Calib Lab"},
+    "btn_color_pick": {"zh_CN": "从相机采样颜色", "en_US": "Pick Color from Camera"},
+    "chk_fixed": {"zh_CN": "默认固定大单元", "en_US": "Fixed Large Unit"},
+    "btn_add": {"zh_CN": "新增", "en_US": "Add"},
+    "btn_update": {"zh_CN": "更新", "en_US": "Update"},
+    "btn_delete": {"zh_CN": "删除", "en_US": "Delete"},
+    "sect_layout": {"zh_CN": "多桌拼接布局", "en_US": "Multi-table Layout"},
+    "chk_layout_enable": {"zh_CN": "启用多桌拼接", "en_US": "Enable Multi-table"},
+    "lbl_layout_rows": {"zh_CN": "布局行数", "en_US": "Layout Rows"},
+    "lbl_layout_cols": {"zh_CN": "布局列数", "en_US": "Layout Cols"},
+    "btn_gen_units": {"zh_CN": "生成单元格", "en_US": "Generate Units"},
+    "col_unit_id": {"zh_CN": "单元ID", "en_US": "Unit ID"},
+    "col_cam_idx": {"zh_CN": "相机索引", "en_US": "Camera"},
+    "col_row_off": {"zh_CN": "行偏移", "en_US": "Row Offset"},
+    "col_col_off": {"zh_CN": "列偏移", "en_US": "Col Offset"},
+    "col_sub_rows": {"zh_CN": "子网格行", "en_US": "Sub Rows"},
+    "col_sub_cols": {"zh_CN": "子网格列", "en_US": "Sub Cols"},
+    "lbl_edit_unit": {"zh_CN": "编辑单元", "en_US": "Edit Unit"},
+    "btn_update_unit": {"zh_CN": "更新单元", "en_US": "Update Unit"},
+    "btn_delete_unit": {"zh_CN": "删除单元", "en_US": "Delete Unit"},
+    "yes": {"zh_CN": "是", "en_US": "Y"},
+    "no": {"zh_CN": "否", "en_US": "N"},
+    "cameras_found": {"zh_CN": "检测到 {n} 个相机", "en_US": "{n} camera(s) found"},
+    "units_generated": {"zh_CN": "已生成 {r}x{c} = {t} 个桌面单元", "en_US": "Generated {r}x{c} = {t} table units"},
+    "config_loaded": {"zh_CN": "已加载配置: {p}", "en_US": "Config loaded: {p}"},
+    "config_saved": {"zh_CN": "已保存配置: {p}", "en_US": "Config saved: {p}"},
+    "config_saved_default": {"zh_CN": "已保存默认配置: {p}", "en_US": "Saved default config: {p}"},
+    "dlg_param_error": {"zh_CN": "参数错误", "en_US": "Parameter Error"},
+    "dlg_check_num": {"zh_CN": "请检查相机参数是否为数字。", "en_US": "Check camera params are numeric."},
+    "dlg_check_num_fmt": {"zh_CN": "请检查数字参数输入格式。", "en_US": "Check numeric format."},
+    "dlg_cam_ok": {"zh_CN": "相机测试成功：可读取到图像帧。", "en_US": "Camera OK: frame captured."},
+    "dlg_cam_fail": {"zh_CN": "相机测试失败：未读取到图像帧。", "en_US": "Camera FAIL: no frame."},
+    "dlg_cam_test": {"zh_CN": "相机测试", "en_US": "Camera Test"},
+    "dlg_input_error": {"zh_CN": "输入错误", "en_US": "Input Error"},
+    "dlg_class_id_empty": {"zh_CN": "类型编号不能为空。", "en_US": "Class ID required."},
+    "dlg_label_empty": {"zh_CN": "建筑类型不能为空。", "en_US": "Building type required."},
+    "dlg_hex_prefix": {"zh_CN": "颜色 HEX 需要以 # 开头。", "en_US": "Color HEX must start with #."},
+    "dlg_no_select": {"zh_CN": "未选择", "en_US": "No Selection"},
+    "dlg_select_row": {"zh_CN": "请先选择一条记录再更新。", "en_US": "Select a row first."},
+    "dlg_select_del": {"zh_CN": "请先选择一条记录再删除。", "en_US": "Select a row to delete."},
+    "dlg_select_unit": {"zh_CN": "请先选择一条单元再更新。", "en_US": "Select a unit to update."},
+    "dlg_select_unit_del": {"zh_CN": "请先选择一条单元再删除。", "en_US": "Select a unit to delete."},
+    "dlg_layout_pos_int": {"zh_CN": "布局行列数必须为正整数。", "en_US": "Layout rows/cols must be positive int."},
+    "dlg_layout_gte1": {"zh_CN": "布局行列数必须 >= 1。", "en_US": "Layout rows/cols must be >= 1."},
+    "dlg_calib_hint": {
+        "zh_CN": "将打开标定窗口。\n请按顺序点击四个角点：左上 -> 右上 -> 右下 -> 左下。\n按 R 重置，按 S 保存，按 Q 取消。",
+        "en_US": "Opening calibration.\nClick 4 corners: TL -> TR -> BR -> BL.\nR=reset, S=save, Q=quit.",
+    },
+    "dlg_calib_hint_title": {"zh_CN": "标定提示", "en_US": "Calibration"},
+    "dlg_calib_fail": {"zh_CN": "标定未完成或相机打开失败。", "en_US": "Calibration incomplete or camera failed."},
+    "dlg_calib_result": {"zh_CN": "标定结果", "en_US": "Calibration Result"},
+    "dlg_calib_ok": {"zh_CN": "标定参数已写入当前配置。请点击保存配置。", "en_US": "Calibration saved to config. Click Save."},
+    "dlg_proj_hint_title": {"zh_CN": "投影标定提示", "en_US": "Projection Calibration"},
+    "dlg_proj_hint": {
+        "zh_CN": "将投出棋盘格图案。\n\n请先把 'Projector Output' 窗口移到投影仪屏幕上，\n然后用投影端上方相机自动检测棋盘格角点。\n\n按 C 确认标定，按 Q 取消。",
+        "en_US": "Projecting chessboard.\n\nMove 'Projector Output' to projector screen.\nTop camera will auto-detect corners.\n\nC=confirm, Q=quit.",
+    },
+    "dlg_proj_fail": {"zh_CN": "标定未完成或相机/投影打开失败。", "en_US": "Projection calibration failed."},
+    "dlg_proj_title": {"zh_CN": "投影标定", "en_US": "Projection Calibration"},
+    "dlg_proj_ok": {"zh_CN": "投影映射标定成功！请点击保存配置。", "en_US": "Projection calibration OK! Click Save."},
+    "dlg_proj_param": {"zh_CN": "投影标定参数需要为数字。", "en_US": "Projection params must be numeric."},
+    "dlg_color_hint_title": {"zh_CN": "颜色采样提示", "en_US": "Color Pick"},
+    "dlg_color_hint": {
+        "zh_CN": "即将打开相机为 [{label}] 采样颜色。\n\n请将对应颜色的 block 放在桌面上，\n在画面中点击该 block 区域（可多次点击取均值）。\n\n按 R 重置采样，按 S 保存结果，按 Q 取消。",
+        "en_US": "Opening camera to sample color for [{label}].\n\nPlace block on table, click to sample (multi-click for avg).\n\nR=reset, S=save, Q=quit.",
+    },
+    "dlg_color_fail": {"zh_CN": "颜色采样未完成或相机打开失败。", "en_US": "Color pick incomplete or camera failed."},
+    "dlg_color_result": {"zh_CN": "采样结果", "en_US": "Color Result"},
+    "dlg_color_ok": {
+        "zh_CN": "颜色采样完成！\n\nLab: {lab}\nHEX: {hex}\n\n已填入表单，请点击「更新」写入表格，然后保存配置。",
+        "en_US": "Color sampled!\n\nLab: {lab}\nHEX: {hex}\n\nFilled in form. Click Update then Save.",
+    },
+    "dlg_file_select": {"zh_CN": "选择配置文件", "en_US": "Select Config File"},
+    "dlg_file_save": {"zh_CN": "保存配置文件", "en_US": "Save Config File"},
+    "preview_title": {"zh_CN": "摄像头实时预览", "en_US": "Live Camera Preview"},
+    "preview_disconnected": {"zh_CN": "未连接", "en_US": "Disconnected"},
+    "preview_start": {"zh_CN": "开始预览", "en_US": "Start"},
+    "preview_stop": {"zh_CN": "停止预览", "en_US": "Stop"},
+    "preview_cam_fail": {"zh_CN": "无法打开相机 {idx}", "en_US": "Cannot open camera {idx}"},
+    "preview_cam_ok": {"zh_CN": "相机 {idx} 已连接", "en_US": "Camera {idx} connected"},
+    "preview_stopped": {"zh_CN": "已停止", "en_US": "Stopped"},
+    "lbl_label_zh": {"zh_CN": "建筑类型(中)", "en_US": "Type (ZH)"},
+    "lbl_label_en": {"zh_CN": "建筑类型(英)", "en_US": "Type (EN)"},
+    "lbl_color_name_zh": {"zh_CN": "颜色名(中)", "en_US": "Color (ZH)"},
+    "lbl_color_name_en": {"zh_CN": "颜色名(英)", "en_US": "Color (EN)"},
+    "lbl_examples_zh": {"zh_CN": "具体建筑(中)", "en_US": "Examples (ZH)"},
+    "lbl_examples_en": {"zh_CN": "具体建筑(英)", "en_US": "Examples (EN)"},
+    "dlg_label_en_empty": {"zh_CN": "英文建筑类型不能为空。", "en_US": "English building type required."},
+    "dlg_color_en_empty": {"zh_CN": "英文颜色名不能为空。", "en_US": "English color name required."},
+    "lbl_calib_target": {"zh_CN": "标定目标", "en_US": "Target"},
+    "calib_target_global": {"zh_CN": "全局(单桌)", "en_US": "Global (single)"},
+    "calib_saved_unit": {"zh_CN": "标定已保存到单元 {uid}", "en_US": "Calibration saved to unit {uid}"},
+}
+
+
+def get_lang() -> str:
+    return _current_lang
+
+
+def set_lang(lang: str) -> None:
+    global _current_lang
+    if lang in SUPPORTED_LANGUAGES:
+        _current_lang = lang
+
+
+def t(key: str, **kwargs) -> str:
+    entry = _STRINGS.get(key)
+    if entry is None:
+        return key
+    text = entry.get(_current_lang, entry.get("en_US", key))
+    if kwargs:
+        text = text.format(**kwargs)
+    return text
