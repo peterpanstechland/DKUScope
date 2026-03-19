@@ -1,32 +1,21 @@
 # Documentation Index
 
-This folder contains project documentation for the tangible planning table.
+Project-level technical documents. For area-specific docs, also see:
+
+- `hardware/README.md` - Physical build, BOM, photos
+- `design/README.md` - 3D models, laser cut files
+- `software/python/README.md` - Python control station
+- `software/touchdesigner/README.md` - TouchDesigner projects
 
 ## Core Documents
 
-- `architecture.md`  
-  End-to-end system architecture, module boundaries, and runtime data flow.
-
-- `hardware-spec.md`  
-  Physical table structure, camera-under-table constraints, lighting, and sizing formulas.
-
-- `color-detection-pipeline.md`  
-  Bottom-camera color detection pipeline, calibration strategy, and stability controls.
-
-- `data-model-and-rules.md`  
-  Grid occupancy model for single-cell, multi-cell, and fixed large building units.
-
-- `integration-protocol.md`  
-  Suggested JSON and WebSocket message contract between detection, simulation, and rendering.
-
-- `projection-mapping-touchdesigner.md`  
-  Practical TouchDesigner mapping workflow, operator graph, and calibration process.
-
-- `development-plan.md`  
-  Milestone-based implementation plan from MVP to full deployment.
-
-- `bom.md`  
-  Bill of materials by baseline and upgrade tiers.
+- `architecture.md` - System architecture, module boundaries, data flow
+- `hardware-spec.md` - Table structure, camera constraints, sizing formulas
+- `color-detection-pipeline.md` - Bottom-camera color detection and calibration
+- `data-model-and-rules.md` - Grid occupancy model for building units
+- `integration-protocol.md` - WebSocket JSON message contract
+- `projection-mapping-touchdesigner.md` - TouchDesigner mapping workflow
+- `development-plan.md` - Milestone-based implementation plan
 
 ## Suggested Reading Order
 
@@ -37,5 +26,3 @@ This folder contains project documentation for the tangible planning table.
 5. `projection-mapping-touchdesigner.md`
 6. `integration-protocol.md`
 7. `development-plan.md`
-8. `bom.md`
-

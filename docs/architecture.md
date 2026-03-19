@@ -49,25 +49,27 @@ Build a real-time tangible planning table where physical block placement changes
 
 Expected total: 70-150 ms.
 
-## Suggested Repository Layout
+## Repository Layout
 
 ```text
-dkuscope/
+DKUScope/
   README.md
-  docs/
-  config/
-    camera.yaml
-    grid.yaml
-    colors.yaml
-    mapping.yaml
-  src/
-    vision/
-    reconstruction/
-    simulation/
-    io/
-    common/
-  td/
-    mapping.toe
+  docs/                           # Technical documents
+  software/
+    python/                       # Control station + detection server
+      main.py
+      requirements.txt
+      config/project_config.json
+      control_station/            # All Python modules
+      scripts/                    # Standalone scripts
+    touchdesigner/                # TD project files (.toe)
+  hardware/
+    bom/                          # Bill of materials
+    photos/                       # Build photos
+    table_design/                 # Engineering drawings
+  design/
+    3d_models/                    # 3D print files (.stl, .step)
+    laser_cut/                    # Laser cut files (.dxf, .svg)
 ```
 
 ## Configuration First

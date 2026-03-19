@@ -21,3 +21,6 @@ venv/
 *.log
 
 reference/
+
+*.toe.autosave
+Backup/
