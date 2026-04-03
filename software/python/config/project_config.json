@@ -10,8 +10,21 @@
   "calibration": {"enabled": false, "source_points": [], "destination_points": [], "output_width": 640, "output_height": 480},
   "projection": {"enabled": false, "projector_camera_index": 1, "projector_width": 1920, "projector_height": 1080, "pattern_cols": 9, "pattern_rows": 6, "source_points": [], "destination_points": [], "warp_matrix": []},
   "layout": {"enabled": false, "layout_rows": 1, "layout_cols": 1, "units": []},
+  "building_overlays": [
+    {
+      "id": "library_ub",
+      "label": "图书馆 UB",
+      "label_en": "Library UB",
+      "class_id": 1,
+      "footprint_cells_w": 2,
+      "footprint_cells_h": 3,
+      "overlay_studs_w": 30,
+      "overlay_studs_h": 36,
+      "notes": "底层可用 2×3 个 6×6 色底铺满逻辑格；上层 30×36 凸点整板压在亚克力/外框上，会跨过格间道路缝，需保证亚克力或垫层承重与高度差。若希望整板名义上刚好对齐「仅凸点网格」的 5×6 个 6×6 单元，可改用 footprint 5×6（见 hardware-spec）。"
+    }
+  ],
   "classes": [
-    {"class_id": 1, "label": "教学建筑", "label_en": "Academic", "color_name": "红色", "color_name_en": "Red", "color_hex": "#D73A49", "building_examples": "AB, 图书馆, IB", "building_examples_en": "AB, Library, IB", "is_fixed_default": false, "allowed_footprints": ["1x1","2x2","3x2"], "calibrated_lab": []},
+    {"class_id": 1, "label": "教学建筑", "label_en": "Academic", "color_name": "红色", "color_name_en": "Red", "color_hex": "#D73A49", "building_examples": "AB, 图书馆, IB", "building_examples_en": "AB, Library, IB", "is_fixed_default": false, "allowed_footprints": ["1x1","2x2","2x3","3x2","5x6"], "calibrated_lab": []},
     {"class_id": 2, "label": "体育场地", "label_en": "Sports", "color_name": "咖啡色", "color_name_en": "Brown", "color_hex": "#8B5A2B", "building_examples": "室外体育场, 体育馆", "building_examples_en": "Outdoor Field, Gym", "is_fixed_default": false, "allowed_footprints": ["1x1","2x2"], "calibrated_lab": []},
     {"class_id": 3, "label": "餐厅建筑", "label_en": "Dining", "color_name": "黄色", "color_name_en": "Yellow", "color_hex": "#F2CC0C", "building_examples": "CCTW", "building_examples_en": "CCTW", "is_fixed_default": false, "allowed_footprints": ["1x1","2x1"], "calibrated_lab": []},
     {"class_id": 4, "label": "行政建筑", "label_en": "Administrative", "color_name": "黑色", "color_name_en": "Black", "color_hex": "#2F2F2F", "building_examples": "ADB, Service Building", "building_examples_en": "ADB, Service Building", "is_fixed_default": false, "allowed_footprints": ["1x1","2x1"], "calibrated_lab": []},

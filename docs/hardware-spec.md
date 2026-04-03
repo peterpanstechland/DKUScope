@@ -14,6 +14,17 @@
 4. Light control cavity (black interior walls)
 5. Bottom camera + illumination assembly
 
+### Large buildings: macro baseplate on top of the 6×6 grid
+
+The logical model stays **one CV / game cell per 6×6 pocket** (plus roads `g` between pockets). For **large footprints** you can stack:
+
+1. **Color / identification layer (optional):** one **6×6** plate per pocket under the building, filling the `M×N` logical footprint (e.g. **2×3** red bases for teaching color).
+2. **Structural / model layer:** a **single large LEGO baseplate** (or plate panel) placed **above** the pocket template and acrylic, spanning **`overlay_studs_w × overlay_studs_h`** studs.
+
+Important: pocket pitch on the table is **`s + g`** per cell (see formulas below), not a continuous 8 mm stud grid across the whole table. So a **30×36** stud sheet does **not** physically tile edge-to-edge onto **`2×3`** pockets without **bridging the road gaps** — that is intentional if the acrylic or an outer rim carries the overhang. For **nominal LEGO-only math** (ignoring `g`), **30×36 studs ≈ 5×6** six-stud modules; use **`5×6`** logical cells if you want the part size and “six-wide modules” story to line up for procurement.
+
+Record each landmark in **`project_config.json`** → **`building_overlays`**: `footprint_cells_*` = logical grid occupancy (same idea as **`allowed_footprints`** `WxH` cells), `overlay_studs_*` = top part stud span. Vision / rules can still mark all underlying cells as occupied by that building.
+
 ## Camera Requirements
 
 - Global shutter (already selected)

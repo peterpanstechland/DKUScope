@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from typing import Any, Dict, List
 
 
@@ -76,6 +76,26 @@ class LayoutConfig:
 
 
 @dataclass
+class BuildingOverlaySpec:
+    """Large LEGO baseplate (or equivalent) sitting above the 6×6 pocket grid.
+
+    ``footprint_cells_*`` is the logical occupancy in **grid cells** (same units as
+    ``allowed_footprints`` like ``2x3``). ``overlay_studs_*`` is the physical part
+    nominal stud span on top (may bridge roads — see docs/hardware-spec.md).
+    """
+
+    id: str
+    label: str = ""
+    label_en: str = ""
+    class_id: int = 1
+    footprint_cells_w: int = 1
+    footprint_cells_h: int = 1
+    overlay_studs_w: int = 6
+    overlay_studs_h: int = 6
+    notes: str = ""
+
+
+@dataclass
 class BuildingClassConfig:
     class_id: int
     label: str
@@ -98,13 +118,14 @@ class ProjectConfig:
     calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
     projection: ProjectionCalibrationConfig = field(default_factory=ProjectionCalibrationConfig)
     layout: LayoutConfig = field(default_factory=LayoutConfig)
+    building_overlays: List[BuildingOverlaySpec] = field(default_factory=list)
     classes: List[BuildingClassConfig] = field(
         default_factory=lambda: [
             BuildingClassConfig(
                 class_id=1, label="教学建筑", label_en="Academic",
                 color_name="红色", color_name_en="Red", color_hex="#D73A49",
                 building_examples="AB, 图书馆, IB", building_examples_en="AB, Library, IB",
-                allowed_footprints=["1x1", "2x2", "3x2"],
+                allowed_footprints=["1x1", "2x2", "2x3", "3x2", "5x6"],
             ),
             BuildingClassConfig(
                 class_id=2, label="体育场地", label_en="Sports",
@@ -182,6 +203,13 @@ class ProjectConfig:
         classes = [
             BuildingClassConfig(**item) for item in data.get("classes", [])
         ] or cls().classes
+
+        overlay_keys = {f.name for f in fields(BuildingOverlaySpec)}
+        building_overlays = [
+            BuildingOverlaySpec(**{k: o[k] for k in overlay_keys if k in o})
+            for o in data.get("building_overlays", [])
+        ]
+
         return cls(
             camera=camera,
             grid=grid,
@@ -189,6 +217,7 @@ class ProjectConfig:
             calibration=calibration,
             projection=projection,
             layout=layout,
+            building_overlays=building_overlays,
             classes=classes,
         )
 

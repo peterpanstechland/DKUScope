@@ -22,3 +22,4 @@ venv/
 
 *.toe.autosave
 Backup/
+.cursor/
