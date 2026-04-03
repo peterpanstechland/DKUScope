@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "description": "Map-only twin-table overlay presets. Grid is drawn only inside map_roi, and center table gap is computed from physical dimensions.",
+  "project_config_sync": {
+    "notes": "Keep software/python/config/project_config.json grid.* in sync with the active hardware profile below.",
+    "active": "B_twin_8x16",
+    "B_twin_8x16": {
+      "rows": 8,
+      "cols": 16,
+      "cell_gap_mm": 49.0,
+      "border_mm": 24.5,
+      "road_cm": 4.9,
+      "cell_size_cm": 4.9
+    },
+    "A_twin_10x20": {
+      "rows": 10,
+      "cols": 20,
+      "cell_gap_mm": 24.5,
+      "border_mm": 12.25,
+      "road_cm": 2.45,
+      "cell_size_cm": 4.9
+    }
+  },
+  "map_roi": {
+    "mode": "normalized_rect",
+    "x": 0.33,
+    "y": 0.13,
+    "w": 0.60,
+    "h": 0.69,
+    "notes": "Normalized [0,1] rectangle inside base map image. Tune these numbers to lock onto the actual campus-map area."
+  },
+  "physical": {
+    "cell_size_cm": 4.9,
+    "notes": "Cell size s from docs/hardware-spec.md."
+  },
+  "twin_layout": {
+    "tables": 2,
+    "table_gap_cm": 0.0,
+    "vertical_shift_cells": 2.0,
+    "horizontal_shift_cells": 0.8,
+    "notes": "Extra cm BETWEEN the two table outer frames, beyond the modular joint. Use 0 for flush abutment: joint width = one road g (hardware-spec half-road borders meet). Set >0 only if there is real empty space between desks."
+  },
+  "profiles": [
+    {
+      "key": "B",
+      "label_en": "Profile B wide road",
+      "module_cells": 8,
+      "road_cm": 4.9,
+      "output_suffix": "8x16"
+    },
+    {
+      "key": "A",
+      "label_en": "Profile A dense",
+      "module_cells": 10,
+      "road_cm": 2.45,
+      "output_suffix": "10x20"
+    }
+  ]
+}

@@ -14,10 +14,11 @@ class CameraConfig:
 
 @dataclass
 class GridConfig:
-    rows: int = 16
+    # Default: twin Profile B (two 8x8), g=s=4.9cm, b=g/2 — see docs/hardware-spec.md & grid_layout_presets.json
+    rows: int = 8
     cols: int = 16
-    cell_gap_mm: float = 2.0
-    border_mm: float = 50.0
+    cell_gap_mm: float = 49.0
+    border_mm: float = 24.5
 
 
 @dataclass
@@ -60,8 +61,8 @@ class TableUnitConfig:
     camera_index: int = 0
     grid_row_offset: int = 0
     grid_col_offset: int = 0
-    grid_rows: int = 16
-    grid_cols: int = 16
+    grid_rows: int = 8
+    grid_cols: int = 8
     calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
 
 

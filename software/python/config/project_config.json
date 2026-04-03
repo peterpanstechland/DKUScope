@@ -1,6 +1,11 @@
 {
   "camera": {"index": 0, "width": 640, "height": 480, "fps": 30},
-  "grid": {"rows": 16, "cols": 16, "cell_gap_mm": 2.0, "border_mm": 50.0},
+  "grid": {
+    "rows": 8,
+    "cols": 16,
+    "cell_gap_mm": 49.0,
+    "border_mm": 24.5
+  },
   "block": {"block_studs_w": 6, "block_studs_h": 6, "block_size_cm": 4.8, "plate_studs_w": 6, "plate_studs_h": 6, "plate_size_cm": 4.8},
   "calibration": {"enabled": false, "source_points": [], "destination_points": [], "output_width": 640, "output_height": 480},
   "projection": {"enabled": false, "projector_camera_index": 1, "projector_width": 1920, "projector_height": 1080, "pattern_cols": 9, "pattern_rows": 6, "source_points": [], "destination_points": [], "warp_matrix": []},
