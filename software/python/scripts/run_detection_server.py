@@ -2,7 +2,8 @@
 DKUScope Detection Server
 
 Reads camera frames, classifies each grid cell's color,
-and broadcasts the state over WebSocket for TouchDesigner to consume.
+reconstructs building-level state, and broadcasts the state over WebSocket
+for TouchDesigner to consume.
 
 Usage:
     python scripts/run_detection_server.py
@@ -21,91 +22,107 @@ from pathlib import Path
 
 from control_station.config_manager import load_config
 from control_station.detection_service import GridDetector, MultiTableDetector, open_camera
+from control_station.reconstruction_service import reconstruct_world_state
 from control_station.ws_server import StateServer
+
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
-logger = logging.getLogger("detection_server")
+logger = logging.getLogger(__name__)
 
 
-async def detection_loop(
-    config_path: Path,
-    host: str,
-    port: int,
-    target_fps: float,
-) -> None:
+async def run_server(config_path: Path, port: int) -> None:
     config = load_config(config_path)
-    logger.info("Config loaded from %s", config_path)
+    server = StateServer(port=port)
 
-    multi_mode = config.layout.enabled and len(config.layout.units) > 0
-    multi_det = None
-    single_det = None
-    cap = None
-
-    if multi_mode:
-        multi_det = MultiTableDetector(config)
-        logger.info("Multi-table mode: %d units, global grid %dx%d", len(config.layout.units), multi_det.total_rows, multi_det.total_cols)
+    if config.layout.enabled and config.layout.units:
+        logger.info("Using multi-table detector")
+        detector = MultiTableDetector(config)
+        cap = None
     else:
-        single_det = GridDetector(config)
-        logger.info("Single-table mode: %dx%d", single_det.rows, single_det.cols)
+        logger.info("Using single-table detector")
+        detector = GridDetector(config)
         cap = open_camera(config)
-        logger.info("Camera %d opened at %dx%d@%dfps", config.camera.index, config.camera.width, config.camera.height, config.camera.fps)
 
-    server = StateServer(host=host, port=port)
-    server_task = asyncio.create_task(server.start())
-
-    interval = 1.0 / target_fps
-    logger.info("Detection running at %.1f Hz, broadcasting on ws://%s:%d", target_fps, host, port)
+    ws_task = asyncio.create_task(server.start())
 
     try:
         while True:
-            t0 = time.monotonic()
+            loop_start = time.perf_counter()
 
-            if multi_mode and multi_det:
-                result = multi_det.process_all()
-            elif single_det and cap:
+            if cap is not None:
+                capture_start = time.perf_counter()
                 ok, frame = cap.read()
+                capture_ms = (time.perf_counter() - capture_start) * 1000.0
+
                 if not ok:
-                    await asyncio.sleep(0.01)
+                    logger.warning("Failed to read frame from camera")
+                    await asyncio.sleep(0.05)
                     continue
-                result = single_det.process_frame(frame)
+
+                process_start = time.perf_counter()
+                frame_result = detector.process_frame(frame)
+                processing_ms = (time.perf_counter() - process_start) * 1000.0
             else:
-                await asyncio.sleep(0.1)
-                continue
+                capture_ms = None
+                process_start = time.perf_counter()
+                frame_result = detector.process_all()
+                processing_ms = (time.perf_counter() - process_start) * 1000.0
 
-            await server.broadcast(result)
+            world_state = reconstruct_world_state(frame_result, config)
 
-            if result.changed_cells:
-                labels = ", ".join(f"({c.row},{c.col})={c.label}" for c in result.changed_cells[:5])
-                logger.info("seq=%d changed=%d: %s", result.seq, len(result.changed_cells), labels)
+            await server.broadcast_frame_state(frame_result)
+            await server.broadcast_world_state(world_state)
+            await server.broadcast_health(
+                seq=frame_result.seq,
+                timestamp_ms=frame_result.timestamp_ms,
+                capture_ms=round(capture_ms, 3) if capture_ms is not None else None,
+                processing_ms=round(processing_ms, 3),
+            )
 
-            elapsed = time.monotonic() - t0
-            await asyncio.sleep(max(0, interval - elapsed))
+            elapsed = time.perf_counter() - loop_start
+            sleep_s = max(0.0, 0.03 - elapsed)   # ~30 FPS target
+            await asyncio.sleep(sleep_s)
+
     except asyncio.CancelledError:
-        pass
+        raise
+    except KeyboardInterrupt:
+        logger.info("Detection server stopped by user")
     finally:
-        if cap:
+        if cap is not None:
             cap.release()
-        if multi_det:
-            multi_det.release()
-        server_task.cancel()
-        logger.info("Detection server stopped.")
+        elif hasattr(detector, "release"):
+            detector.release()
+
+        ws_task.cancel()
+        try:
+            await ws_task
+        except asyncio.CancelledError:
+            pass
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="DKUScope detection server")
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path("config/project_config.json"),
+        help="Path to project config JSON",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8765,
+        help="WebSocket port",
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="DKUScope Detection + WebSocket Server")
-    parser.add_argument(
-        "--config", type=Path, default=Path("config/project_config.json"),
-        help="Path to project config JSON",
-    )
-    parser.add_argument("--host", default="0.0.0.0", help="WebSocket bind host")
-    parser.add_argument("--port", type=int, default=8765, help="WebSocket port")
-    parser.add_argument("--fps", type=float, default=10.0, help="Target detection FPS")
-    args = parser.parse_args()
-
-    asyncio.run(detection_loop(args.config, args.host, args.port, args.fps))
+    args = parse_args()
+    asyncio.run(run_server(config_path=args.config, port=args.port))
 
 
 if __name__ == "__main__":
