@@ -756,7 +756,7 @@ class ControlStationApp(tk.Tk):
                 building_count=status.building_count,
                 coverage=coverage,
                 debug_overlay=debug_overlay,
-                debug_frame=status.debug_frame if debug_overlay else None,
+                merged_preview=status.merged_preview,
             )
         else:
             self.detection_status_var.set(t("detection_stopped"))

@@ -34,6 +34,7 @@ class DetectionStatus:
     metrics: Dict[str, float] = field(default_factory=dict)
     processing_ms: float = 0.0
     debug_frame: Optional[object] = None
+    merged_preview: Optional[object] = None
 
 
 class DetectionRunner:
@@ -210,6 +211,7 @@ class DetectionRunner:
                     metrics=world.metrics,
                     processing_ms=round(processing_ms, 3),
                     debug_frame=result.debug_frame,
+                    merged_preview=result.merged_preview,
                 ))
 
                 elapsed = time.monotonic() - loop_start

@@ -29,6 +29,7 @@ hiddenimports = [
     "control_station.cell_analysis",
     "control_station.color_profile",
     "control_station.background_refs",
+    "control_station.merged_preview",
     "control_station.reconstruction_service",
     "control_station.ws_server",
     "control_station.camera_service",

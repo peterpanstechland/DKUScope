@@ -22,7 +22,7 @@ DEFAULT_CLASS_COLORS: Dict[int, str] = {
 
 
 class DetectionMonitorWidget(ttk.Frame):
-    """Live grid map + change log for detection output."""
+    """Live grid map + merged camera preview + change log."""
 
     def __init__(self, parent: tk.Widget, **kwargs) -> None:
         super().__init__(parent, **kwargs)
@@ -30,6 +30,8 @@ class DetectionMonitorWidget(ttk.Frame):
         self._cell_px = 48
         self._gap_px = 2
         self._grid_canvas: Optional[tk.Canvas] = None
+        self._merged_canvas: Optional[tk.Canvas] = None
+        self._merged_photo = None
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -37,17 +39,31 @@ class DetectionMonitorWidget(ttk.Frame):
         self.rowconfigure(2, weight=1)
 
         self.summary_var = tk.StringVar(value=t("detect_monitor_idle"))
-        ttk.Label(self, textvariable=self.summary_var, wraplength=700).grid(
+        ttk.Label(self, textvariable=self.summary_var, wraplength=900).grid(
             row=0, column=0, sticky="w", pady=(0, 8),
         )
 
-        grid_frame = ttk.LabelFrame(self, text=t("detect_monitor_grid"), padding=8)
-        grid_frame.grid(row=1, column=0, sticky="ew", pady=(0, 8))
+        compare_frame = ttk.Frame(self)
+        compare_frame.grid(row=1, column=0, sticky="ew", pady=(0, 8))
+        compare_frame.columnconfigure(0, weight=1)
+        compare_frame.columnconfigure(1, weight=1)
+
+        grid_frame = ttk.LabelFrame(compare_frame, text=t("detect_monitor_grid"), padding=8)
+        grid_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
         self._grid_host = ttk.Frame(grid_frame)
         self._grid_host.pack()
-        self._preview_host = ttk.Frame(grid_frame)
-        self._preview_host.pack(pady=(8, 0))
-        self._preview_canvas: Optional[tk.Canvas] = None
+
+        merged_frame = ttk.LabelFrame(compare_frame, text=t("detect_monitor_merged"), padding=8)
+        merged_frame.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
+        self._merged_host = ttk.Frame(merged_frame)
+        self._merged_host.pack()
+        self._merged_placeholder = ttk.Label(
+            merged_frame,
+            text=t("detect_monitor_merged_idle"),
+            foreground="#666",
+            wraplength=280,
+        )
+        self._merged_placeholder.pack(pady=40)
 
         log_frame = ttk.LabelFrame(self, text=t("detect_monitor_changes"), padding=8)
         log_frame.grid(row=2, column=0, sticky="nsew")
@@ -88,6 +104,14 @@ class DetectionMonitorWidget(ttk.Frame):
         if self._grid_canvas:
             self._grid_canvas.destroy()
             self._grid_canvas = None
+        self._clear_merged_preview()
+
+    def _clear_merged_preview(self) -> None:
+        if self._merged_canvas:
+            self._merged_canvas.destroy()
+            self._merged_canvas = None
+        self._merged_photo = None
+        self._merged_placeholder.pack(pady=40)
 
     def update_frame(
         self,
@@ -101,7 +125,7 @@ class DetectionMonitorWidget(ttk.Frame):
         building_count: int = 0,
         coverage: float = 0.0,
         debug_overlay: bool = False,
-        debug_frame: Optional[object] = None,
+        merged_preview: Optional[object] = None,
     ) -> None:
         self.summary_var.set(t(
             "detect_monitor_summary",
@@ -115,13 +139,12 @@ class DetectionMonitorWidget(ttk.Frame):
             url=ws_url,
         ))
         self._draw_grid(rows, cols, cells, debug_overlay=debug_overlay)
-        if debug_frame is not None:
-            self._show_debug_preview(debug_frame, rows, cols)
+        if merged_preview is not None:
+            self._show_merged_preview(merged_preview)
         for cell in changed_cells:
             self.change_tree.insert("", 0, values=(
                 seq, cell.row, cell.col, cell.label, f"{cell.confidence:.2f}",
             ))
-        # cap log length
         children = self.change_tree.get_children()
         if len(children) > 200:
             for iid in children[200:]:
@@ -174,36 +197,27 @@ class DetectionMonitorWidget(ttk.Frame):
 
         self._grid_canvas = canvas
 
-    def _show_debug_preview(self, frame, rows: int, cols: int) -> None:
+    def _show_merged_preview(self, frame) -> None:
         try:
             import cv2
             from PIL import Image, ImageTk
         except ImportError:
             return
 
-        if self._preview_canvas:
-            self._preview_canvas.destroy()
+        self._merged_placeholder.pack_forget()
+        if self._merged_canvas:
+            self._merged_canvas.destroy()
 
         h, w = frame.shape[:2]
-        preview = frame.copy()
-        cell_h = h / rows
-        cell_w = w / cols
-        for r in range(rows + 1):
-            y = int(r * cell_h)
-            cv2.line(preview, (0, y), (w, y), (0, 255, 0), 1)
-        for c in range(cols + 1):
-            x = int(c * cell_w)
-            cv2.line(preview, (x, 0), (x, h), (0, 255, 0), 1)
-
-        rgb = cv2.cvtColor(preview, cv2.COLOR_BGR2RGB)
-        scale = min(320 / w, 240 / h, 1.0)
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        max_w, max_h = 480, 260
+        scale = min(max_w / w, max_h / h, 1.0)
         nw, nh = int(w * scale), int(h * scale)
         if scale < 1.0:
-            rgb = cv2.resize(rgb, (nw, nh))
+            rgb = cv2.resize(rgb, (nw, nh), interpolation=cv2.INTER_AREA)
         img = Image.fromarray(rgb)
-        photo = ImageTk.PhotoImage(image=img)
-        canvas = tk.Canvas(self._preview_host, width=nw, height=nh, highlightthickness=0)
+        self._merged_photo = ImageTk.PhotoImage(image=img)
+        canvas = tk.Canvas(self._merged_host, width=nw, height=nh, bg="#1a1a1a", highlightthickness=0)
         canvas.pack()
-        canvas.create_image(0, 0, anchor=tk.NW, image=photo)
-        canvas.image = photo  # keep reference
-        self._preview_canvas = canvas
+        canvas.create_image(0, 0, anchor=tk.NW, image=self._merged_photo)
+        self._merged_canvas = canvas

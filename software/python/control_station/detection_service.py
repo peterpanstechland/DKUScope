@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 
 from .background_refs import BackgroundRef, load_background_refs
+from .merged_preview import MergedSlice, build_merged_preview
 from .cell_analysis import analyze_cell, preprocess_frame
 from .color_profile import ensure_class_color_profile, lab_in_range, range_diagonal
 from .config_schema import BuildingClassConfig, CalibrationConfig, DetectionConfig, ProjectConfig
@@ -38,6 +39,7 @@ class FrameResult:
     cells: List[CellResult]
     changed_cells: List[CellResult] = field(default_factory=list)
     debug_frame: Optional[np.ndarray] = None
+    merged_preview: Optional[np.ndarray] = None
 
 
 class ColorClassifier:
@@ -236,6 +238,12 @@ class GridDetector:
                     self._prev_grid[(r, c)] = stable_id
 
         debug_frame = self._last_frame if self._detection.debug_overlay else None
+        merged = build_merged_preview(
+            [MergedSlice("global", self._last_frame, 0, 0, self.rows, self.cols)]
+            if self._last_frame is not None else [],
+            self.rows,
+            self.cols,
+        )
         return FrameResult(
             seq=self._seq,
             timestamp_ms=ts,
@@ -244,6 +252,7 @@ class GridDetector:
             cells=cells,
             changed_cells=changed,
             debug_frame=debug_frame,
+            merged_preview=merged,
         )
 
     def get_last_frame(self) -> Optional[np.ndarray]:
@@ -306,6 +315,7 @@ class MultiTableDetector:
         all_cells: List[CellResult] = []
         all_changed: List[CellResult] = []
         debug_frame: Optional[np.ndarray] = None
+        slices: List[MergedSlice] = []
 
         for uid, (det, cap, row_off, col_off) in self._unit_detectors.items():
             ok, frame = cap.read()
@@ -314,6 +324,16 @@ class MultiTableDetector:
             local_result = det.process_frame(frame)
             if local_result.debug_frame is not None:
                 debug_frame = local_result.debug_frame
+            warped = det.get_last_frame()
+            if warped is not None:
+                slices.append(MergedSlice(
+                    unit_id=uid,
+                    frame=warped,
+                    row_offset=row_off,
+                    col_offset=col_off,
+                    local_rows=det.rows,
+                    local_cols=det.cols,
+                ))
             for cell in local_result.cells:
                 global_cell = CellResult(
                     row=cell.row + row_off, col=cell.col + col_off,
@@ -326,11 +346,13 @@ class MultiTableDetector:
                     all_changed.append(global_cell)
                     self._prev_grid[(global_cell.row, global_cell.col)] = global_cell.class_id
 
+        merged = build_merged_preview(slices, self.total_rows, self.total_cols)
         return FrameResult(
             seq=self._seq, timestamp_ms=ts,
             rows=self.total_rows, cols=self.total_cols,
             cells=all_cells, changed_cells=all_changed,
             debug_frame=debug_frame,
+            merged_preview=merged,
         )
 
     def release(self) -> None:

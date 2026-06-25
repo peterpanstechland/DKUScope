@@ -181,7 +181,12 @@ _STRINGS: Dict[str, Dict[str, str]] = {
         "zh_CN": "检测未运行。点击右侧「启动检测」后，这里会显示 8×4 彩色网格和变更记录。",
         "en_US": "Detection idle. Click Start Detection to see the live grid map and change log.",
     },
-    "detect_monitor_grid": {"zh_CN": "当前识别结果（网格图）", "en_US": "Live Grid Map"},
+    "detect_monitor_grid": {"zh_CN": "识别结果（网格）", "en_US": "Detection Grid"},
+    "detect_monitor_merged": {"zh_CN": "融合预览（校准对照）", "en_US": "Merged Preview (calibrated)"},
+    "detect_monitor_merged_idle": {
+        "zh_CN": "启动检测后显示各路相机校准融合画面，与左侧网格对照。",
+        "en_US": "Start detection to show stitched calibrated camera view for comparison.",
+    },
     "detect_monitor_changes": {"zh_CN": "最近变更", "en_US": "Recent Changes"},
     "detect_monitor_summary": {
         "zh_CN": "seq={seq} | 网格 {rows}×{cols} | 变更 {changed} | 建筑 {buildings} | 覆盖率 {coverage:.0%} | TD客户端 {clients} | {url}",
