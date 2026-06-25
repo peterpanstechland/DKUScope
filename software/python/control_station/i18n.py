@@ -17,6 +17,7 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     "tab_layout": {"zh_CN": "布局与拼接", "en_US": "Layout"},
     "tab_cameras": {"zh_CN": "相机标定", "en_US": "Camera Calibration"},
     "tab_detection": {"zh_CN": "检测监控", "en_US": "Detection Monitor"},
+    "tab_logging": {"zh_CN": "日志", "en_US": "Logging"},
     "panel_camera": {"zh_CN": "摄像头", "en_US": "Camera"},
     "lbl_camera": {"zh_CN": "相机", "en_US": "Cam"},
     "btn_refresh": {"zh_CN": "刷新", "en_US": "Scan"},
@@ -265,6 +266,24 @@ _STRINGS: Dict[str, Dict[str, str]] = {
         "en_US": "ID: {cid}\nZH: {zh}\nEN: {en}\nColor: {color_zh} / {color_en}\nHEX: {hex}\nLab: {lab}\nExamples (ZH): {ex_zh}\nExamples (EN): {ex_en}\nFootprints: {footprints}\nFixed: {fixed}",
     },
     "dlg_class_id_int": {"zh_CN": "类型编号必须是整数。", "en_US": "Class ID must be an integer."},
+    "sect_log_types": {"zh_CN": "日志类型", "en_US": "Log categories"},
+    "sect_logging": {"zh_CN": "日志设置", "en_US": "Logging Settings"},
+    "chk_log_enable": {"zh_CN": "启用日志记录", "en_US": "Enable logging"},
+    "chk_log_app": {"zh_CN": "应用 / 配置操作", "en_US": "App / config"},
+    "chk_log_detection": {"zh_CN": "检测管线", "en_US": "Detection"},
+    "chk_log_websocket": {"zh_CN": "WebSocket", "en_US": "WebSocket"},
+    "chk_log_calibration": {"zh_CN": "标定与采样", "en_US": "Calibration"},
+    "chk_log_ota": {"zh_CN": "OTA 更新", "en_US": "OTA updates"},
+    "chk_log_crash": {"zh_CN": "崩溃日志 (crash.log)", "en_US": "Crash log (crash.log)"},
+    "lbl_log_dir": {"zh_CN": "日志目录", "en_US": "Log directory"},
+    "lbl_log_files": {"zh_CN": "日志文件", "en_US": "Log files"},
+    "btn_open_log_dir": {"zh_CN": "打开日志文件夹", "en_US": "Open Log Folder"},
+    "btn_apply_logging": {"zh_CN": "应用日志设置", "en_US": "Apply Logging"},
+    "logging_tab_hint": {
+        "zh_CN": "日志保存在程序目录下的 logs/ 文件夹。dkuscope.log 记录常规运行，crash.log 记录未捕获异常。修改后点「应用日志设置」或保存配置生效。",
+        "en_US": "Logs are stored in logs/ under the install folder. dkuscope.log for normal events, crash.log for uncaught exceptions. Click Apply or save config.",
+    },
+    "logging_applied": {"zh_CN": "日志设置已应用。", "en_US": "Logging settings applied."},
 }
 
 

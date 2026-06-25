@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 from dataclasses import asdict
 from typing import Set
 
@@ -10,9 +9,10 @@ import websockets
 from websockets.server import WebSocketServerProtocol
 
 from .detection_service import FrameResult
+from .log_service import get_logger
 from .reconstruction_service import WorldState, world_state_to_dict
 
-logger = logging.getLogger(__name__)
+logger = get_logger("websocket")
 
 
 class StateServer:

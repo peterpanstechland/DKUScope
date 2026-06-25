@@ -7,6 +7,9 @@ from typing import Callable, List, Optional
 from .color_pick_service import run_color_pick
 from .config_schema import BuildingClassConfig
 from .i18n import t
+from .log_service import get_logger
+
+calib_logger = get_logger("calibration")
 
 
 class BuildingTypesTab(ttk.Frame):
@@ -80,7 +83,7 @@ class BuildingTypesTab(ttk.Frame):
         ttk.Button(list_btns, text=t("btn_add"), command=self._add).pack(side=tk.LEFT, padx=(0, 4))
         ttk.Button(list_btns, text=t("btn_delete"), command=self._delete).pack(side=tk.LEFT, padx=(0, 4))
         ttk.Button(list_btns, text=t("btn_inspect"), command=self._inspect_selected).pack(side=tk.LEFT, padx=(0, 4))
-        self.count_var = tk.StringVar(value=t("building_count_fmt", n=0))
+        self.count_var = tk.StringVar(value=t("building_count_fmt", n=0, total=0))
         ttk.Label(list_btns, textvariable=self.count_var).pack(side=tk.RIGHT)
 
         detail = ttk.LabelFrame(self, text=t("lbl_edit"), padding=8)
@@ -278,6 +281,7 @@ class BuildingTypesTab(ttk.Frame):
             self._all_classes[idx] = cls
         self._apply_filter()
         self.tree.selection_set(f"class-{cls.class_id}")
+        calib_logger.info("Building type saved id=%s label=%s", cls.class_id, cls.label)
         messagebox.showinfo(t("btn_save_type"), t("building_saved_fmt", name=cls.label))
 
     def _delete(self) -> None:
@@ -337,4 +341,5 @@ class BuildingTypesTab(ttk.Frame):
         lab_str = ",".join(f"{v:.1f}" for v in result.lab_values)
         self.class_calibrated_lab_var.set(lab_str)
         self.class_color_hex_var.set(result.hex_color)
+        calib_logger.info("Color sampled for %s lab=%s hex=%s", label, lab_str, result.hex_color)
         messagebox.showinfo(t("dlg_color_result"), t("dlg_color_ok", lab=lab_str, hex=result.hex_color))

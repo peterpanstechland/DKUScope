@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import threading
 import time
 from dataclasses import dataclass, field
@@ -10,9 +9,10 @@ from typing import Callable, Dict, List, Optional
 from .config_schema import ProjectConfig
 from .detection_service import CellResult, GridDetector, MultiTableDetector, open_camera
 from .reconstruction_service import reconstruct_world_state
+from .log_service import get_logger
 from .ws_server import StateServer
 
-logger = logging.getLogger(__name__)
+logger = get_logger("detection")
 
 
 @dataclass

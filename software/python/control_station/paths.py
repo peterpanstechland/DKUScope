@@ -23,6 +23,10 @@ def get_default_config_path() -> Path:
     return get_install_dir() / "config" / "project_config.json"
 
 
+def get_logs_dir() -> Path:
+    return get_install_dir() / "logs"
+
+
 def ensure_default_config() -> Path:
     """Copy bundled default config next to the install dir if missing."""
     target = get_default_config_path()

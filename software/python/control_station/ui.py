@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from typing import List
@@ -12,12 +13,20 @@ from .camera_service import enumerate_cameras, test_camera
 from .config_manager import load_config, save_config
 from .config_schema import (
     LayoutConfig,
+    LoggingConfig,
     ProjectConfig,
     TableUnitConfig,
 )
 from .detection_monitor import DetectionMonitorWidget
 from .detection_runner import DetectionRunner, DetectionStatus
 from .i18n import SUPPORTED_LANGUAGES, get_lang, set_lang, t
+from .log_service import (
+    configure_logging,
+    get_crash_log_path,
+    get_logger,
+    get_main_log_path,
+    get_logs_dir,
+)
 from .ota_service import (
     ReleaseInfo,
     UpdateCheckResult,
@@ -29,6 +38,8 @@ from .ota_service import (
     open_release_page,
 )
 from .projection_calibration_service import run_projection_calibration
+
+app_logger = get_logger("app")
 
 
 class ControlStationApp(tk.Tk):
@@ -96,6 +107,7 @@ class ControlStationApp(tk.Tk):
         if self._ota_worker and self._ota_worker._thread and self._ota_worker._thread.is_alive():
             return
         self.status_var.set(t("ota_checking"))
+        app_logger.info("Checking for updates")
         self._ota_worker = UpdateWorker(on_check_done=lambda r: self.after(0, lambda: self._on_update_checked(r)))
         self._ota_worker.check_async()
 
@@ -231,16 +243,19 @@ class ControlStationApp(tk.Tk):
         self.tab_classes = ttk.Frame(notebook, padding=12)
         self.tab_layout = ttk.Frame(notebook, padding=12)
         self.tab_detection = ttk.Frame(notebook, padding=12)
+        self.tab_logging = ttk.Frame(notebook, padding=12)
         notebook.add(self.tab_general, text=t("tab_general"))
         notebook.add(self.tab_cameras, text=t("tab_cameras"))
         notebook.add(self.tab_classes, text=t("tab_classes"))
         notebook.add(self.tab_layout, text=t("tab_layout"))
         notebook.add(self.tab_detection, text=t("tab_detection"))
+        notebook.add(self.tab_logging, text=t("tab_logging"))
         self._build_general_tab()
         self._build_cameras_tab()
         self._build_classes_tab()
         self._build_layout_tab()
         self._build_detection_tab()
+        self._build_logging_tab()
 
     # ── right camera panel ──────────────────────────────────
 
@@ -398,6 +413,80 @@ class ControlStationApp(tk.Tk):
         self._add_labeled_entry(root, t("lbl_plate_h"), self.plate_studs_h_var, 12, 2)
         self._add_labeled_entry(root, t("lbl_plate_cm"), self.plate_size_cm_var, 13, 0)
 
+    def _build_logging_tab(self) -> None:
+        root = self.tab_logging
+        root.columnconfigure(1, weight=1)
+
+        ttk.Label(root, text=t("sect_logging"), font=("", 11, "bold")).grid(
+            row=0, column=0, columnspan=2, sticky="w", pady=(0, 8),
+        )
+        self.log_enabled_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(root, text=t("chk_log_enable"), variable=self.log_enabled_var).grid(
+            row=1, column=0, columnspan=2, sticky="w",
+        )
+
+        types = ttk.LabelFrame(root, text=t("sect_log_types"), padding=8)
+        types.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(8, 0))
+        self.log_app_var = tk.BooleanVar(value=True)
+        self.log_detection_var = tk.BooleanVar(value=True)
+        self.log_websocket_var = tk.BooleanVar(value=True)
+        self.log_calibration_var = tk.BooleanVar(value=True)
+        self.log_ota_var = tk.BooleanVar(value=True)
+        self.log_crash_var = tk.BooleanVar(value=True)
+        for i, (var, key) in enumerate([
+            (self.log_app_var, "chk_log_app"),
+            (self.log_detection_var, "chk_log_detection"),
+            (self.log_websocket_var, "chk_log_websocket"),
+            (self.log_calibration_var, "chk_log_calibration"),
+            (self.log_ota_var, "chk_log_ota"),
+            (self.log_crash_var, "chk_log_crash"),
+        ]):
+            ttk.Checkbutton(types, text=t(key), variable=var).grid(row=i // 2, column=i % 2, sticky="w", padx=8, pady=2)
+
+        ttk.Label(root, text=t("lbl_log_dir")).grid(row=3, column=0, sticky="w", pady=(12, 2))
+        self.log_dir_var = tk.StringVar(value=str(get_logs_dir()))
+        ttk.Entry(root, textvariable=self.log_dir_var, state="readonly").grid(row=3, column=1, sticky="ew", pady=(12, 2))
+
+        ttk.Label(root, text=t("lbl_log_files")).grid(row=4, column=0, sticky="w", pady=2)
+        self.log_files_var = tk.StringVar()
+        ttk.Entry(root, textvariable=self.log_files_var, state="readonly").grid(row=4, column=1, sticky="ew", pady=2)
+
+        btn_row = ttk.Frame(root)
+        btn_row.grid(row=5, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        ttk.Button(btn_row, text=t("btn_apply_logging"), command=self.on_apply_logging).pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Button(btn_row, text=t("btn_open_log_dir"), command=self.on_open_log_dir).pack(side=tk.LEFT)
+
+        ttk.Label(root, text=t("logging_tab_hint"), wraplength=720, foreground="#555").grid(
+            row=6, column=0, columnspan=2, sticky="w", pady=(12, 0),
+        )
+        self._refresh_log_paths_display()
+
+    def _refresh_log_paths_display(self) -> None:
+        self.log_dir_var.set(str(get_logs_dir()))
+        self.log_files_var.set(f"{get_main_log_path().name}  |  {get_crash_log_path().name}")
+
+    def _logging_from_form(self) -> LoggingConfig:
+        return LoggingConfig(
+            enabled=self.log_enabled_var.get(),
+            log_app=self.log_app_var.get(),
+            log_detection=self.log_detection_var.get(),
+            log_websocket=self.log_websocket_var.get(),
+            log_calibration=self.log_calibration_var.get(),
+            log_ota=self.log_ota_var.get(),
+            log_crash=self.log_crash_var.get(),
+        )
+
+    def on_apply_logging(self) -> None:
+        self.config_data.logging = self._logging_from_form()
+        configure_logging(self.config_data.logging)
+        app_logger.info("Logging settings applied from UI")
+        messagebox.showinfo(t("sect_logging"), t("logging_applied"))
+
+    def on_open_log_dir(self) -> None:
+        log_dir = get_logs_dir()
+        log_dir.mkdir(parents=True, exist_ok=True)
+        os.startfile(log_dir)  # type: ignore[attr-defined]
+
     # ── building types tab ──────────────────────────────────
 
     def _build_classes_tab(self) -> None:
@@ -525,6 +614,16 @@ class ControlStationApp(tk.Tk):
             cfg.layout.layout_cols,
         )
         self._refresh_detection_monitor_colors()
+        log = cfg.logging
+        self.log_enabled_var.set(log.enabled)
+        self.log_app_var.set(log.log_app)
+        self.log_detection_var.set(log.log_detection)
+        self.log_websocket_var.set(log.log_websocket)
+        self.log_calibration_var.set(log.log_calibration)
+        self.log_ota_var.set(log.log_ota)
+        self.log_crash_var.set(log.log_crash)
+        self._refresh_log_paths_display()
+        configure_logging(cfg.logging)
 
     def _sync_unit_tree(self, units: List[TableUnitConfig]) -> None:
         for item in self.unit_tree.get_children():
@@ -576,6 +675,8 @@ class ControlStationApp(tk.Tk):
             cfg.camera.index = units[0].camera_index
             if units[0].calibration.enabled:
                 cfg.calibration = units[0].calibration
+        cfg.logging = self._logging_from_form()
+        configure_logging(cfg.logging)
         return cfg
 
     # ── camera actions ──────────────────────────────────────
@@ -657,11 +758,14 @@ class ControlStationApp(tk.Tk):
         self.camera_cal_tab.stop_all_previews()
         try:
             self.detection_runner.start(config, port=port, target_fps=fps)
+            app_logger.info("Detection started port=%s fps=%s", port, fps)
         except Exception as exc:
+            app_logger.exception("Failed to start detection")
             messagebox.showerror(t("panel_detection"), str(exc))
 
     def on_stop_detection(self) -> None:
         self.detection_runner.stop()
+        app_logger.info("Detection stopped")
         self.detection_status_var.set(t("detection_stopped"))
         self.detection_monitor.show_idle()
 
@@ -768,6 +872,7 @@ class ControlStationApp(tk.Tk):
             return
         self.config_data = load_config(Path(p))
         self._load_config_to_form()
+        app_logger.info("Config loaded from %s", p)
         self.status_var.set(t("config_loaded", p=p))
 
     def on_save_file(self):
@@ -779,6 +884,7 @@ class ControlStationApp(tk.Tk):
         except ValueError:
             messagebox.showerror(t("dlg_param_error"), t("dlg_check_num_fmt"))
             return
+        app_logger.info("Config saved to %s", p)
         self.status_var.set(t("config_saved", p=p))
 
     def on_save_default(self):
@@ -787,9 +893,11 @@ class ControlStationApp(tk.Tk):
         except ValueError:
             messagebox.showerror(t("dlg_param_error"), t("dlg_check_num_fmt"))
             return
+        app_logger.info("Config saved to default path %s", path)
         self.status_var.set(t("config_saved_default", p=path))
 
     def destroy(self):
+        app_logger.info("Application closing")
         self.detection_runner.stop()
         self.camera_preview.stop()
         self.camera_cal_tab.stop_all_previews()

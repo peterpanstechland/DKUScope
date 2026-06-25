@@ -121,6 +121,17 @@ class BuildingClassConfig:
 
 
 @dataclass
+class LoggingConfig:
+    enabled: bool = True
+    log_app: bool = True
+    log_detection: bool = True
+    log_websocket: bool = True
+    log_calibration: bool = True
+    log_ota: bool = True
+    log_crash: bool = True
+
+
+@dataclass
 class ProjectConfig:
     table: TableConfig = field(default_factory=TableConfig)
     camera: CameraConfig = field(default_factory=CameraConfig)
@@ -129,6 +140,7 @@ class ProjectConfig:
     calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
     projection: ProjectionCalibrationConfig = field(default_factory=ProjectionCalibrationConfig)
     layout: LayoutConfig = field(default_factory=LayoutConfig)
+    logging: LoggingConfig = field(default_factory=LoggingConfig)
     building_overlays: List[BuildingOverlaySpec] = field(default_factory=list)
     classes: List[BuildingClassConfig] = field(
         default_factory=lambda: [
@@ -211,6 +223,7 @@ class ProjectConfig:
             layout_cols=layout_raw.get("layout_cols", 1),
             units=layout_units,
         )
+        logging_cfg = LoggingConfig(**data.get("logging", {}))
 
         classes = [
             BuildingClassConfig(**item) for item in data.get("classes", [])
@@ -230,6 +243,7 @@ class ProjectConfig:
             calibration=calibration,
             projection=projection,
             layout=layout,
+            logging=logging_cfg,
             building_overlays=building_overlays,
             classes=classes,
         )

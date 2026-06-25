@@ -17,9 +17,11 @@ from typing import Callable, Optional
 
 from . import __version__
 from .paths import get_install_dir
+from .log_service import get_logger
 
 GITHUB_REPO = "peterpanstechland/DKUScope"
 USER_AGENT = f"DKUScope-Updater/{__version__}"
+ota_logger = get_logger("ota")
 WINDOWS_ZIP_PATTERN = re.compile(r"DKUScope-v.+?-windows\.zip$", re.IGNORECASE)
 
 

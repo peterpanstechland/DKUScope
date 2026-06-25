@@ -12,6 +12,7 @@
   "block": {"block_studs_w": 16, "block_studs_h": 16, "block_size_cm": 12.8, "plate_studs_w": 16, "plate_studs_h": 16, "plate_size_cm": 12.8},
   "calibration": {"enabled": false, "source_points": [], "destination_points": [], "output_width": 640, "output_height": 480},
   "projection": {"enabled": false, "projector_camera_index": 1, "projector_width": 1920, "projector_height": 1080, "pattern_cols": 9, "pattern_rows": 6, "source_points": [], "destination_points": [], "warp_matrix": []},
+  "logging": {"enabled": true, "log_app": true, "log_detection": true, "log_websocket": true, "log_calibration": true, "log_ota": true, "log_crash": true},
   "layout": {
     "enabled": true,
     "layout_rows": 2,
