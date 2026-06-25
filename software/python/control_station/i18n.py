@@ -13,7 +13,7 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     "btn_reset_form": {"zh_CN": "从表单重置", "en_US": "Reset Form"},
     "status_ready": {"zh_CN": "就绪", "en_US": "Ready"},
     "tab_general": {"zh_CN": "基础参数", "en_US": "General"},
-    "tab_classes": {"zh_CN": "房屋与颜色定义", "en_US": "Building Classes"},
+    "tab_classes": {"zh_CN": "建筑类型", "en_US": "Building Types"},
     "tab_layout": {"zh_CN": "布局与拼接", "en_US": "Layout"},
     "tab_cameras": {"zh_CN": "相机标定", "en_US": "Camera Calibration"},
     "tab_detection": {"zh_CN": "检测监控", "en_US": "Detection Monitor"},
@@ -134,8 +134,8 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     "dlg_color_fail": {"zh_CN": "颜色采样未完成或相机打开失败。", "en_US": "Color pick incomplete or camera failed."},
     "dlg_color_result": {"zh_CN": "采样结果", "en_US": "Color Result"},
     "dlg_color_ok": {
-        "zh_CN": "颜色采样完成！\n\nLab: {lab}\nHEX: {hex}\n\n已填入表单，请点击「更新」写入表格，然后保存配置。",
-        "en_US": "Color sampled!\n\nLab: {lab}\nHEX: {hex}\n\nFilled in form. Click Update then Save.",
+        "zh_CN": "颜色采样完成！\n\nLab: {lab}\nHEX: {hex}\n\n已填入表单，请点击「保存」写入列表，然后保存配置。",
+        "en_US": "Color sampled!\n\nLab: {lab}\nHEX: {hex}\n\nFilled in form. Click Save, then save config.",
     },
     "dlg_file_select": {"zh_CN": "选择配置文件", "en_US": "Select Config File"},
     "dlg_file_save": {"zh_CN": "保存配置文件", "en_US": "Save Config File"},
@@ -169,8 +169,8 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     },
     "detection_error_fmt": {"zh_CN": "检测错误: {err}", "en_US": "Detection error: {err}"},
     "dlg_no_color_calib": {
-        "zh_CN": "尚未完成颜色标定。请先在「房屋与颜色定义」页为各类别采样颜色。",
-        "en_US": "Color calibration missing. Sample colors for each class first.",
+        "zh_CN": "尚未完成颜色标定。请先在「建筑类型」页为各类别采样颜色。",
+        "en_US": "Color calibration missing. Sample colors for each class on the Building Types tab first.",
     },
     "dlg_detection_running": {
         "zh_CN": "检测已在运行中。",
@@ -245,6 +245,26 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     },
     "ota_install_fail": {"zh_CN": "安装失败", "en_US": "Install Failed"},
     "ota_no_notes": {"zh_CN": "（无更新说明）", "en_US": "(No release notes)"},
+    "lbl_search": {"zh_CN": "搜索", "en_US": "Search"},
+    "btn_search": {"zh_CN": "查询", "en_US": "Search"},
+    "btn_clear_search": {"zh_CN": "清空", "en_US": "Clear"},
+    "sect_building_list": {"zh_CN": "建筑类型列表", "en_US": "Building Types"},
+    "col_calibrated": {"zh_CN": "已标定", "en_US": "Calibrated"},
+    "btn_inspect": {"zh_CN": "查看", "en_US": "Inspect"},
+    "btn_save_type": {"zh_CN": "保存", "en_US": "Save"},
+    "btn_new_blank": {"zh_CN": "新建空白", "en_US": "New Blank"},
+    "building_count_fmt": {"zh_CN": "显示 {n} / 共 {total} 项", "en_US": "Showing {n} of {total}"},
+    "building_tab_hint": {
+        "zh_CN": "左侧列表可搜索、新增、删除、查看；右侧编辑详情后点「保存」。颜色识别需点「从相机采样颜色」并完成 Lab 标定。",
+        "en_US": "Search, add, delete, and inspect on the left; edit details on the right and click Save. Use Pick Color from Camera for detection calibration.",
+    },
+    "building_saved_fmt": {"zh_CN": "已保存：{name}", "en_US": "Saved: {name}"},
+    "building_delete_confirm": {"zh_CN": "确定删除「{name}」？", "en_US": "Delete '{name}'?"},
+    "building_inspect_fmt": {
+        "zh_CN": "编号：{cid}\n中文：{zh}\n英文：{en}\n颜色：{color_zh} / {color_en}\nHEX：{hex}\nLab：{lab}\n示例(中)：{ex_zh}\n示例(英)：{ex_en}\n占位：{footprints}\n固定单元：{fixed}",
+        "en_US": "ID: {cid}\nZH: {zh}\nEN: {en}\nColor: {color_zh} / {color_en}\nHEX: {hex}\nLab: {lab}\nExamples (ZH): {ex_zh}\nExamples (EN): {ex_en}\nFootprints: {footprints}\nFixed: {fixed}",
+    },
+    "dlg_class_id_int": {"zh_CN": "类型编号必须是整数。", "en_US": "Class ID must be an integer."},
 }
 
 

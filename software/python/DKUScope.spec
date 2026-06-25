@@ -28,7 +28,7 @@ hiddenimports = [
     "control_station.ws_server",
     "control_station.camera_service",
     "control_station.camera_preview",
-    "control_station.camera_calibration_tab",
+    "control_station.building_types_tab",
     "control_station.ota_service",
     "control_station.calibration_service",
     "control_station.projection_calibration_service",

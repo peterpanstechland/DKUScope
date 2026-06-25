@@ -5,13 +5,12 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from typing import List
 
+from .building_types_tab import BuildingTypesTab
 from .camera_calibration_tab import CameraCalibrationTab
 from .camera_preview import CameraPreviewWidget
 from .camera_service import enumerate_cameras, test_camera
-from .color_pick_service import run_color_pick
 from .config_manager import load_config, save_config
 from .config_schema import (
-    BuildingClassConfig,
     LayoutConfig,
     ProjectConfig,
     TableUnitConfig,
@@ -399,66 +398,22 @@ class ControlStationApp(tk.Tk):
         self._add_labeled_entry(root, t("lbl_plate_h"), self.plate_studs_h_var, 12, 2)
         self._add_labeled_entry(root, t("lbl_plate_cm"), self.plate_size_cm_var, 13, 0)
 
-    # ── classes tab ─────────────────────────────────────────
+    # ── building types tab ──────────────────────────────────
 
     def _build_classes_tab(self) -> None:
-        root = self.tab_classes
-        root.columnconfigure(0, weight=1)
-        root.rowconfigure(0, weight=1)
-        columns = ("class_id", "label_zh", "label_en", "color_zh", "color_en", "color_hex", "calibrated_lab", "examples_zh", "examples_en", "is_fixed", "footprints")
-        self.class_tree = ttk.Treeview(root, columns=columns, show="headings", height=12)
-        col_heads = {
-            "class_id": t("col_class_id"), "label_zh": t("lbl_label_zh"), "label_en": t("lbl_label_en"),
-            "color_zh": t("lbl_color_name_zh"), "color_en": t("lbl_color_name_en"), "color_hex": t("col_color_hex"),
-            "calibrated_lab": t("col_calib_lab"), "examples_zh": t("lbl_examples_zh"), "examples_en": t("lbl_examples_en"),
-            "is_fixed": t("col_fixed"), "footprints": t("col_footprints"),
-        }
-        col_widths = {
-            "class_id": 55, "label_zh": 80, "label_en": 90, "color_zh": 65, "color_en": 65, "color_hex": 75,
-            "calibrated_lab": 105, "examples_zh": 130, "examples_en": 130, "is_fixed": 50, "footprints": 120,
-        }
-        for col in columns:
-            self.class_tree.heading(col, text=col_heads[col])
-            self.class_tree.column(col, width=col_widths[col], anchor="center")
-        self.class_tree.grid(row=0, column=0, sticky="nsew")
-        self.class_tree.bind("<<TreeviewSelect>>", self.on_class_selected)
-        sb = ttk.Scrollbar(root, orient=tk.VERTICAL, command=self.class_tree.yview)
-        self.class_tree.configure(yscrollcommand=sb.set)
-        sb.grid(row=0, column=1, sticky="ns")
+        self.building_types_tab = BuildingTypesTab(
+            self.tab_classes,
+            get_camera_settings=self._get_camera_settings_with_index,
+        )
+        self.building_types_tab.pack(fill=tk.BOTH, expand=True)
 
-        form = ttk.LabelFrame(root, text=t("lbl_edit"), padding=8)
-        form.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(8, 0))
-        for i in range(8):
-            form.columnconfigure(i, weight=1)
-        self.class_id_var = tk.StringVar()
-        self.class_label_zh_var = tk.StringVar()
-        self.class_label_en_var = tk.StringVar()
-        self.class_color_zh_var = tk.StringVar()
-        self.class_color_en_var = tk.StringVar()
-        self.class_color_hex_var = tk.StringVar()
-        self.class_calibrated_lab_var = tk.StringVar()
-        self.class_examples_zh_var = tk.StringVar()
-        self.class_examples_en_var = tk.StringVar()
-        self.class_fixed_var = tk.BooleanVar(value=False)
-        self.class_footprints_var = tk.StringVar()
-
-        self._add_labeled_entry(form, t("lbl_class_id"), self.class_id_var, 0, 0, 1)
-        self._add_labeled_entry(form, t("lbl_label_zh"), self.class_label_zh_var, 0, 2, 1)
-        self._add_labeled_entry(form, t("lbl_label_en"), self.class_label_en_var, 0, 4, 1)
-        self._add_labeled_entry(form, t("lbl_color_hex"), self.class_color_hex_var, 0, 6, 1)
-        self._add_labeled_entry(form, t("lbl_color_name_zh"), self.class_color_zh_var, 1, 0, 1)
-        self._add_labeled_entry(form, t("lbl_color_name_en"), self.class_color_en_var, 1, 2, 1)
-        self._add_labeled_entry(form, t("lbl_examples_zh"), self.class_examples_zh_var, 1, 4, 1)
-        self._add_labeled_entry(form, t("lbl_examples_en"), self.class_examples_en_var, 1, 6, 1)
-        self._add_labeled_entry(form, t("lbl_calib_lab"), self.class_calibrated_lab_var, 2, 0, 1)
-        self._add_labeled_entry(form, t("lbl_footprints"), self.class_footprints_var, 2, 2, 1)
-        ttk.Button(form, text=t("btn_color_pick"), command=self.on_color_pick_from_camera).grid(row=2, column=4, columnspan=2, sticky="ew", pady=(6, 0))
-        ttk.Checkbutton(form, text=t("chk_fixed"), variable=self.class_fixed_var).grid(row=2, column=6, sticky="w", pady=(6, 0))
-        btns = ttk.Frame(form)
-        btns.grid(row=3, column=0, columnspan=8, sticky="e", pady=(6, 0))
-        ttk.Button(btns, text=t("btn_add"), command=self.on_class_add).pack(side=tk.LEFT, padx=4)
-        ttk.Button(btns, text=t("btn_update"), command=self.on_class_update).pack(side=tk.LEFT, padx=4)
-        ttk.Button(btns, text=t("btn_delete"), command=self.on_class_delete).pack(side=tk.LEFT, padx=4)
+    def _get_camera_settings_with_index(self) -> tuple[int, int, int, int]:
+        return (
+            int(self.camera_index_var.get()),
+            int(self.cam_width_var.get()),
+            int(self.cam_height_var.get()),
+            int(self.cam_fps_var.get()),
+        )
 
     # ── layout tab ──────────────────────────────────────────
 
@@ -557,17 +512,7 @@ class ControlStationApp(tk.Tk):
         self.proj_h_var.set(str(cfg.projection.projector_height))
         self._refresh_projection_status()
 
-        for item in self.class_tree.get_children():
-            self.class_tree.delete(item)
-        for ci in cfg.classes:
-            lab_str = ",".join(f"{v:.1f}" for v in ci.calibrated_lab) if ci.calibrated_lab else ""
-            self.class_tree.insert("", tk.END, values=(
-                ci.class_id, ci.label, ci.label_en,
-                ci.color_name, ci.color_name_en, ci.color_hex, lab_str,
-                ci.building_examples, ci.building_examples_en,
-                t("yes") if ci.is_fixed_default else t("no"),
-                ",".join(ci.allowed_footprints),
-            ))
+        self.building_types_tab.load_classes(cfg.classes)
 
         self.layout_enabled_var.set(cfg.layout.enabled)
         self.layout_rows_var.set(str(cfg.layout.layout_rows))
@@ -613,20 +558,7 @@ class ControlStationApp(tk.Tk):
         cfg.block.plate_studs_h = int(self.plate_studs_h_var.get())
         cfg.block.plate_size_cm = float(self.plate_size_cm_var.get())
 
-        classes: List[BuildingClassConfig] = []
-        for iid in self.class_tree.get_children():
-            row = self.class_tree.item(iid, "values")
-            lab_raw = str(row[6]).strip()
-            calibrated_lab = [float(v) for v in lab_raw.split(",") if v.strip()] if lab_raw else []
-            classes.append(BuildingClassConfig(
-                class_id=int(row[0]), label=str(row[1]), label_en=str(row[2]),
-                color_name=str(row[3]), color_name_en=str(row[4]), color_hex=str(row[5]),
-                building_examples=str(row[7]), building_examples_en=str(row[8]),
-                is_fixed_default=str(row[9]) == t("yes"),
-                allowed_footprints=[s.strip() for s in str(row[10]).split(",") if s.strip()],
-                calibrated_lab=calibrated_lab,
-            ))
-        cfg.classes = classes
+        cfg.classes = self.building_types_tab.collect_classes()
 
         units: List[TableUnitConfig] = []
         layout_enabled, layout_rows, layout_cols, units = self.camera_cal_tab.collect_units()
@@ -764,94 +696,6 @@ class ControlStationApp(tk.Tk):
         self.config_data.projection.warp_matrix = result.warp_matrix
         self._refresh_projection_status()
         messagebox.showinfo(t("dlg_proj_title"), t("dlg_proj_ok"))
-
-    # ── class actions ───────────────────────────────────────
-
-    def on_class_selected(self, _event):
-        sel = self.class_tree.selection()
-        if not sel:
-            return
-        row = self.class_tree.item(sel[0], "values")
-        self.class_id_var.set(str(row[0]))
-        self.class_label_zh_var.set(str(row[1]))
-        self.class_label_en_var.set(str(row[2]))
-        self.class_color_zh_var.set(str(row[3]))
-        self.class_color_en_var.set(str(row[4]))
-        self.class_color_hex_var.set(str(row[5]))
-        self.class_calibrated_lab_var.set(str(row[6]))
-        self.class_examples_zh_var.set(str(row[7]))
-        self.class_examples_en_var.set(str(row[8]))
-        self.class_fixed_var.set(str(row[9]) == t("yes"))
-        self.class_footprints_var.set(str(row[10]))
-
-    def _validate_class_form(self) -> bool:
-        if not self.class_id_var.get().strip():
-            messagebox.showerror(t("dlg_input_error"), t("dlg_class_id_empty"))
-            return False
-        if not self.class_label_zh_var.get().strip():
-            messagebox.showerror(t("dlg_input_error"), t("dlg_label_empty"))
-            return False
-        if not self.class_label_en_var.get().strip():
-            messagebox.showerror(t("dlg_input_error"), t("dlg_label_en_empty"))
-            return False
-        if not self.class_color_zh_var.get().strip() or not self.class_color_en_var.get().strip():
-            messagebox.showerror(t("dlg_input_error"), t("dlg_color_en_empty"))
-            return False
-        if not self.class_color_hex_var.get().startswith("#"):
-            messagebox.showerror(t("dlg_input_error"), t("dlg_hex_prefix"))
-            return False
-        return True
-
-    def _class_row_values(self):
-        return (
-            self.class_id_var.get().strip(),
-            self.class_label_zh_var.get().strip(),
-            self.class_label_en_var.get().strip(),
-            self.class_color_zh_var.get().strip(),
-            self.class_color_en_var.get().strip(),
-            self.class_color_hex_var.get().strip(),
-            self.class_calibrated_lab_var.get().strip(),
-            self.class_examples_zh_var.get().strip(),
-            self.class_examples_en_var.get().strip(),
-            t("yes") if self.class_fixed_var.get() else t("no"),
-            self.class_footprints_var.get().strip() or "1x1",
-        )
-
-    def on_class_add(self):
-        if self._validate_class_form():
-            self.class_tree.insert("", tk.END, values=self._class_row_values())
-
-    def on_class_update(self):
-        sel = self.class_tree.selection()
-        if not sel:
-            messagebox.showwarning(t("dlg_no_select"), t("dlg_select_row"))
-            return
-        if self._validate_class_form():
-            self.class_tree.item(sel[0], values=self._class_row_values())
-
-    def on_class_delete(self):
-        sel = self.class_tree.selection()
-        if not sel:
-            messagebox.showwarning(t("dlg_no_select"), t("dlg_select_del"))
-            return
-        self.class_tree.delete(sel[0])
-
-    def on_color_pick_from_camera(self):
-        try:
-            idx, w, h, fps = int(self.camera_index_var.get()), int(self.cam_width_var.get()), int(self.cam_height_var.get()), int(self.cam_fps_var.get())
-        except ValueError:
-            messagebox.showerror(t("dlg_param_error"), t("dlg_check_num"))
-            return
-        label = self.class_label_zh_var.get().strip() or self.class_label_en_var.get().strip() or "?"
-        messagebox.showinfo(t("dlg_color_hint_title"), t("dlg_color_hint", label=label))
-        result = run_color_pick(idx, w, h, fps, class_label=label)
-        if result is None:
-            messagebox.showwarning(t("dlg_color_result"), t("dlg_color_fail"))
-            return
-        lab_str = ",".join(f"{v:.1f}" for v in result.lab_values)
-        self.class_calibrated_lab_var.set(lab_str)
-        self.class_color_hex_var.set(result.hex_color)
-        messagebox.showinfo(t("dlg_color_result"), t("dlg_color_ok", lab=lab_str, hex=result.hex_color))
 
     # ── layout actions ──────────────────────────────────────
 
