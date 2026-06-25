@@ -6,7 +6,7 @@ SUPPORTED_LANGUAGES = {"zh_CN": "中文", "en_US": "English"}
 _current_lang = "zh_CN"
 
 _STRINGS: Dict[str, Dict[str, str]] = {
-    "app_title": {"zh_CN": "DKUScope 上位机配置工具", "en_US": "DKUScope Control Station"},
+    "app_title": {"zh_CN": "DKUScope 上位机", "en_US": "DKUScope Control Station"},
     "btn_load": {"zh_CN": "加载配置", "en_US": "Load Config"},
     "btn_save": {"zh_CN": "保存配置", "en_US": "Save Config"},
     "btn_save_default": {"zh_CN": "保存到默认路径", "en_US": "Save Default"},
@@ -15,6 +15,7 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     "tab_general": {"zh_CN": "基础参数", "en_US": "General"},
     "tab_classes": {"zh_CN": "房屋与颜色定义", "en_US": "Building Classes"},
     "tab_layout": {"zh_CN": "布局与拼接", "en_US": "Layout"},
+    "tab_detection": {"zh_CN": "检测监控", "en_US": "Detection Monitor"},
     "panel_camera": {"zh_CN": "摄像头", "en_US": "Camera"},
     "lbl_camera": {"zh_CN": "相机", "en_US": "Cam"},
     "btn_refresh": {"zh_CN": "刷新", "en_US": "Scan"},
@@ -30,6 +31,13 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     "not_calibrated": {"zh_CN": "未标定", "en_US": "Not calibrated"},
     "calibrated_fmt": {"zh_CN": "已标定 ({w}x{h})", "en_US": "Calibrated ({w}x{h})"},
     "sect_grid": {"zh_CN": "网格与尺寸设置", "en_US": "Grid & Sizing"},
+    "sect_table": {"zh_CN": "物理桌面", "en_US": "Physical Table"},
+    "lbl_table_width": {"zh_CN": "桌面宽度(mm)", "en_US": "Table Width (mm)"},
+    "lbl_table_height": {"zh_CN": "桌面高度(mm)", "en_US": "Table Height (mm)"},
+    "lbl_cell_width": {"zh_CN": "投影单元宽(mm)", "en_US": "Cell Width (mm)"},
+    "lbl_cell_height": {"zh_CN": "投影单元高(mm)", "en_US": "Cell Height (mm)"},
+    "lbl_block_width": {"zh_CN": "乐高底座宽(mm)", "en_US": "Block Width (mm)"},
+    "lbl_block_height": {"zh_CN": "乐高底座高(mm)", "en_US": "Block Height (mm)"},
     "lbl_grid_rows": {"zh_CN": "网格行数", "en_US": "Grid Rows"},
     "lbl_grid_cols": {"zh_CN": "网格列数", "en_US": "Grid Cols"},
     "lbl_grid_gap": {"zh_CN": "网格间距(mm)", "en_US": "Cell Gap (mm)"},
@@ -148,6 +156,41 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     "lbl_calib_target": {"zh_CN": "标定目标", "en_US": "Target"},
     "calib_target_global": {"zh_CN": "全局(单桌)", "en_US": "Global (single)"},
     "calib_saved_unit": {"zh_CN": "标定已保存到单元 {uid}", "en_US": "Calibration saved to unit {uid}"},
+    "panel_detection": {"zh_CN": "实时检测", "en_US": "Live Detection"},
+    "btn_start_detection": {"zh_CN": "启动检测", "en_US": "Start Detection"},
+    "btn_stop_detection": {"zh_CN": "停止检测", "en_US": "Stop Detection"},
+    "lbl_ws_port": {"zh_CN": "WS端口", "en_US": "WS Port"},
+    "lbl_detect_fps": {"zh_CN": "检测帧率", "en_US": "Detect FPS"},
+    "detection_stopped": {"zh_CN": "检测已停止", "en_US": "Detection stopped"},
+    "detection_running_fmt": {
+        "zh_CN": "检测中 seq={seq} 变更={changed} 网格={rows}x{cols} 客户端={clients} {url}",
+        "en_US": "Running seq={seq} changed={changed} grid={rows}x{cols} clients={clients} {url}",
+    },
+    "detection_error_fmt": {"zh_CN": "检测错误: {err}", "en_US": "Detection error: {err}"},
+    "dlg_no_color_calib": {
+        "zh_CN": "尚未完成颜色标定。请先在「房屋与颜色定义」页为各类别采样颜色。",
+        "en_US": "Color calibration missing. Sample colors for each class first.",
+    },
+    "dlg_detection_running": {
+        "zh_CN": "检测已在运行中。",
+        "en_US": "Detection is already running.",
+    },
+    "detect_monitor_idle": {
+        "zh_CN": "检测未运行。点击右侧「启动检测」后，这里会显示 8×4 彩色网格和变更记录。",
+        "en_US": "Detection idle. Click Start Detection to see the live grid map and change log.",
+    },
+    "detect_monitor_grid": {"zh_CN": "当前识别结果（网格图）", "en_US": "Live Grid Map"},
+    "detect_monitor_changes": {"zh_CN": "最近变更", "en_US": "Recent Changes"},
+    "detect_monitor_summary": {
+        "zh_CN": "seq={seq} | 网格 {rows}×{cols} | 本帧变更 {changed} | TD客户端 {clients} | {url}",
+        "en_US": "seq={seq} | grid {rows}×{cols} | changed {changed} | TD clients {clients} | {url}",
+    },
+    "col_detect_seq": {"zh_CN": "帧号", "en_US": "Seq"},
+    "col_detect_row": {"zh_CN": "行", "en_US": "Row"},
+    "col_detect_col": {"zh_CN": "列", "en_US": "Col"},
+    "col_detect_label": {"zh_CN": "类型", "en_US": "Type"},
+    "col_detect_conf": {"zh_CN": "置信度", "en_US": "Conf"},
+    "btn_clear_detect_log": {"zh_CN": "清空变更记录", "en_US": "Clear Log"},
 }
 
 

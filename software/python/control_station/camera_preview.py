@@ -48,8 +48,8 @@ class CameraPreviewWidget(tk.LabelFrame):
         self._cam_fps = 30
 
         self._show_grid = False
-        self._grid_rows = 16
-        self._grid_cols = 16
+        self._grid_rows = 4
+        self._grid_cols = 8
 
         self._start_callback = None
 
@@ -62,7 +62,7 @@ class CameraPreviewWidget(tk.LabelFrame):
         self._cam_fps = fps
 
     def configure_grid_overlay(
-        self, show: bool, rows: int = 16, cols: int = 16
+        self, show: bool, rows: int = 4, cols: int = 8
     ) -> None:
         self._show_grid = show
         self._grid_rows = rows

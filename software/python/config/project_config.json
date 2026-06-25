@@ -1,10 +1,28 @@
 {
+  "table": {
+    "table_width_mm": 1800.0,
+    "table_height_mm": 900.0,
+    "cell_width_mm": 225.0,
+    "cell_height_mm": 225.0,
+    "block_width_mm": 128.0,
+    "block_height_mm": 128.0
+  },
   "camera": {"index": 0, "width": 640, "height": 480, "fps": 30},
-  "grid": {"rows": 16, "cols": 16, "cell_gap_mm": 2.0, "border_mm": 50.0},
-  "block": {"block_studs_w": 6, "block_studs_h": 6, "block_size_cm": 4.8, "plate_studs_w": 6, "plate_studs_h": 6, "plate_size_cm": 4.8},
+  "grid": {"rows": 4, "cols": 8, "cell_gap_mm": 2.0, "border_mm": 50.0},
+  "block": {"block_studs_w": 16, "block_studs_h": 16, "block_size_cm": 12.8, "plate_studs_w": 16, "plate_studs_h": 16, "plate_size_cm": 12.8},
   "calibration": {"enabled": false, "source_points": [], "destination_points": [], "output_width": 640, "output_height": 480},
   "projection": {"enabled": false, "projector_camera_index": 1, "projector_width": 1920, "projector_height": 1080, "pattern_cols": 9, "pattern_rows": 6, "source_points": [], "destination_points": [], "warp_matrix": []},
-  "layout": {"enabled": false, "layout_rows": 1, "layout_cols": 1, "units": []},
+  "layout": {
+    "enabled": true,
+    "layout_rows": 2,
+    "layout_cols": 2,
+    "units": [
+      {"unit_id": "A", "camera_index": 0, "grid_row_offset": 0, "grid_col_offset": 0, "grid_rows": 2, "grid_cols": 4, "calibration": {"enabled": false, "source_points": [], "destination_points": [], "output_width": 640, "output_height": 480}},
+      {"unit_id": "B", "camera_index": 1, "grid_row_offset": 0, "grid_col_offset": 4, "grid_rows": 2, "grid_cols": 4, "calibration": {"enabled": false, "source_points": [], "destination_points": [], "output_width": 640, "output_height": 480}},
+      {"unit_id": "C", "camera_index": 2, "grid_row_offset": 2, "grid_col_offset": 0, "grid_rows": 2, "grid_cols": 4, "calibration": {"enabled": false, "source_points": [], "destination_points": [], "output_width": 640, "output_height": 480}},
+      {"unit_id": "D", "camera_index": 3, "grid_row_offset": 2, "grid_col_offset": 4, "grid_rows": 2, "grid_cols": 4, "calibration": {"enabled": false, "source_points": [], "destination_points": [], "output_width": 640, "output_height": 480}}
+    ]
+  },
   "classes": [
     {"class_id": 1, "label": "教学建筑", "label_en": "Academic", "color_name": "红色", "color_name_en": "Red", "color_hex": "#D73A49", "building_examples": "AB, 图书馆, IB", "building_examples_en": "AB, Library, IB", "is_fixed_default": false, "allowed_footprints": ["1x1","2x2","3x2"], "calibrated_lab": []},
     {"class_id": 2, "label": "体育场地", "label_en": "Sports", "color_name": "咖啡色", "color_name_en": "Brown", "color_hex": "#8B5A2B", "building_examples": "室外体育场, 体育馆", "building_examples_en": "Outdoor Field, Gym", "is_fixed_default": false, "allowed_footprints": ["1x1","2x2"], "calibrated_lab": []},

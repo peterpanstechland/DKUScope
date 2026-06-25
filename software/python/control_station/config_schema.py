@@ -13,21 +13,31 @@ class CameraConfig:
 
 
 @dataclass
+class TableConfig:
+    table_width_mm: float = 1800.0
+    table_height_mm: float = 900.0
+    cell_width_mm: float = 225.0
+    cell_height_mm: float = 225.0
+    block_width_mm: float = 128.0
+    block_height_mm: float = 128.0
+
+
+@dataclass
 class GridConfig:
-    rows: int = 16
-    cols: int = 16
+    rows: int = 4
+    cols: int = 8
     cell_gap_mm: float = 2.0
     border_mm: float = 50.0
 
 
 @dataclass
 class BlockConfig:
-    block_studs_w: int = 6
-    block_studs_h: int = 6
-    block_size_cm: float = 4.8
-    plate_studs_w: int = 6
-    plate_studs_h: int = 6
-    plate_size_cm: float = 4.8
+    block_studs_w: int = 16
+    block_studs_h: int = 16
+    block_size_cm: float = 12.8
+    plate_studs_w: int = 16
+    plate_studs_h: int = 16
+    plate_size_cm: float = 12.8
 
 
 @dataclass
@@ -60,17 +70,17 @@ class TableUnitConfig:
     camera_index: int = 0
     grid_row_offset: int = 0
     grid_col_offset: int = 0
-    grid_rows: int = 16
-    grid_cols: int = 16
+    grid_rows: int = 2
+    grid_cols: int = 4
     calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
 
 
 @dataclass
 class LayoutConfig:
     """Describes how multiple table units are arranged."""
-    enabled: bool = False
-    layout_rows: int = 1
-    layout_cols: int = 1
+    enabled: bool = True
+    layout_rows: int = 2
+    layout_cols: int = 2
     units: List["TableUnitConfig"] = field(default_factory=list)
 
 
@@ -91,6 +101,7 @@ class BuildingClassConfig:
 
 @dataclass
 class ProjectConfig:
+    table: TableConfig = field(default_factory=TableConfig)
     camera: CameraConfig = field(default_factory=CameraConfig)
     grid: GridConfig = field(default_factory=GridConfig)
     block: BlockConfig = field(default_factory=BlockConfig)
@@ -155,6 +166,7 @@ class ProjectConfig:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ProjectConfig":
+        table = TableConfig(**data.get("table", {}))
         camera = CameraConfig(**data.get("camera", {}))
         grid = GridConfig(**data.get("grid", {}))
         block = BlockConfig(**data.get("block", {}))
@@ -182,6 +194,7 @@ class ProjectConfig:
             BuildingClassConfig(**item) for item in data.get("classes", [])
         ] or cls().classes
         return cls(
+            table=table,
             camera=camera,
             grid=grid,
             block=block,

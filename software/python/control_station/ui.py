@@ -16,6 +16,8 @@ from .config_schema import (
     ProjectConfig,
     TableUnitConfig,
 )
+from .detection_monitor import DetectionMonitorWidget
+from .detection_runner import DetectionRunner, DetectionStatus
 from .i18n import SUPPORTED_LANGUAGES, get_lang, set_lang, t
 from .projection_calibration_service import run_projection_calibration
 
@@ -26,6 +28,7 @@ class ControlStationApp(tk.Tk):
         self.default_config_path = default_config_path
         self.config_data: ProjectConfig = load_config(default_config_path)
         self.cameras: list = []
+        self.detection_runner = DetectionRunner(on_status=self._on_detection_status)
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -88,12 +91,15 @@ class ControlStationApp(tk.Tk):
         self.tab_general = ttk.Frame(notebook, padding=12)
         self.tab_classes = ttk.Frame(notebook, padding=12)
         self.tab_layout = ttk.Frame(notebook, padding=12)
+        self.tab_detection = ttk.Frame(notebook, padding=12)
         notebook.add(self.tab_general, text=t("tab_general"))
         notebook.add(self.tab_classes, text=t("tab_classes"))
         notebook.add(self.tab_layout, text=t("tab_layout"))
+        notebook.add(self.tab_detection, text=t("tab_detection"))
         self._build_general_tab()
         self._build_classes_tab()
         self._build_layout_tab()
+        self._build_detection_tab()
 
     # ── right camera panel ──────────────────────────────────
 
@@ -144,6 +150,25 @@ class ControlStationApp(tk.Tk):
 
         ttk.Separator(panel, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
 
+        detect_frame = ttk.LabelFrame(panel, text=t("panel_detection"), padding=4)
+        detect_frame.pack(fill=tk.X, pady=(0, 6))
+        detect_ctrl = ttk.Frame(detect_frame)
+        detect_ctrl.pack(fill=tk.X, pady=(0, 4))
+        ttk.Label(detect_ctrl, text=t("lbl_ws_port")).pack(side=tk.LEFT)
+        self.ws_port_var = tk.StringVar(value="8765")
+        ttk.Entry(detect_ctrl, textvariable=self.ws_port_var, width=6).pack(side=tk.LEFT, padx=(2, 8))
+        ttk.Label(detect_ctrl, text=t("lbl_detect_fps")).pack(side=tk.LEFT)
+        self.detect_fps_var = tk.StringVar(value="10")
+        ttk.Entry(detect_ctrl, textvariable=self.detect_fps_var, width=5).pack(side=tk.LEFT, padx=(2, 0))
+        detect_btn = ttk.Frame(detect_frame)
+        detect_btn.pack(fill=tk.X, pady=(0, 4))
+        ttk.Button(detect_btn, text=t("btn_start_detection"), command=self.on_start_detection).pack(side=tk.LEFT, padx=(0, 4), fill=tk.X, expand=True)
+        ttk.Button(detect_btn, text=t("btn_stop_detection"), command=self.on_stop_detection).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.detection_status_var = tk.StringVar(value=t("detection_stopped"))
+        ttk.Label(detect_frame, textvariable=self.detection_status_var, wraplength=400).pack(anchor="w")
+
+        ttk.Separator(panel, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
+
         proj_frame = ttk.LabelFrame(panel, text=t("panel_proj_calib"), padding=4)
         proj_frame.pack(fill=tk.X)
         proj_ctrl = ttk.Frame(proj_frame)
@@ -172,7 +197,7 @@ class ControlStationApp(tk.Tk):
         try:
             rows, cols = int(self.grid_rows_var.get()), int(self.grid_cols_var.get())
         except ValueError:
-            rows, cols = 16, 16
+            rows, cols = 4, 8
         self.camera_preview.configure_grid_overlay(self.preview_grid_var.get(), rows, cols)
 
     # ── general tab ─────────────────────────────────────────
@@ -181,29 +206,43 @@ class ControlStationApp(tk.Tk):
         root = self.tab_general
         for i in range(4):
             root.columnconfigure(i, weight=1)
-        ttk.Label(root, text=t("sect_grid"), font=("", 11, "bold")).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 8))
+        ttk.Label(root, text=t("sect_table"), font=("", 11, "bold")).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 8))
+        self.table_width_var = tk.StringVar()
+        self.table_height_var = tk.StringVar()
+        self.cell_width_var = tk.StringVar()
+        self.cell_height_var = tk.StringVar()
+        self.block_width_var = tk.StringVar()
+        self.block_height_var = tk.StringVar()
+        self._add_labeled_entry(root, t("lbl_table_width"), self.table_width_var, 1, 0)
+        self._add_labeled_entry(root, t("lbl_table_height"), self.table_height_var, 1, 2)
+        self._add_labeled_entry(root, t("lbl_cell_width"), self.cell_width_var, 2, 0)
+        self._add_labeled_entry(root, t("lbl_cell_height"), self.cell_height_var, 2, 2)
+        self._add_labeled_entry(root, t("lbl_block_width"), self.block_width_var, 3, 0)
+        self._add_labeled_entry(root, t("lbl_block_height"), self.block_height_var, 3, 2)
+        ttk.Separator(root, orient=tk.HORIZONTAL).grid(row=4, column=0, columnspan=4, sticky="ew", pady=12)
+        ttk.Label(root, text=t("sect_grid"), font=("", 11, "bold")).grid(row=5, column=0, columnspan=4, sticky="w", pady=(0, 8))
         self.grid_rows_var = tk.StringVar()
         self.grid_cols_var = tk.StringVar()
         self.grid_gap_var = tk.StringVar()
         self.grid_border_var = tk.StringVar()
-        self._add_labeled_entry(root, t("lbl_grid_rows"), self.grid_rows_var, 1, 0)
-        self._add_labeled_entry(root, t("lbl_grid_cols"), self.grid_cols_var, 1, 2)
-        self._add_labeled_entry(root, t("lbl_grid_gap"), self.grid_gap_var, 2, 0)
-        self._add_labeled_entry(root, t("lbl_border"), self.grid_border_var, 2, 2)
-        ttk.Separator(root, orient=tk.HORIZONTAL).grid(row=3, column=0, columnspan=4, sticky="ew", pady=12)
-        ttk.Label(root, text=t("sect_block"), font=("", 11, "bold")).grid(row=4, column=0, columnspan=4, sticky="w", pady=(0, 8))
+        self._add_labeled_entry(root, t("lbl_grid_rows"), self.grid_rows_var, 6, 0)
+        self._add_labeled_entry(root, t("lbl_grid_cols"), self.grid_cols_var, 6, 2)
+        self._add_labeled_entry(root, t("lbl_grid_gap"), self.grid_gap_var, 7, 0)
+        self._add_labeled_entry(root, t("lbl_border"), self.grid_border_var, 7, 2)
+        ttk.Separator(root, orient=tk.HORIZONTAL).grid(row=8, column=0, columnspan=4, sticky="ew", pady=12)
+        ttk.Label(root, text=t("sect_block"), font=("", 11, "bold")).grid(row=9, column=0, columnspan=4, sticky="w", pady=(0, 8))
         self.block_studs_w_var = tk.StringVar()
         self.block_studs_h_var = tk.StringVar()
         self.block_size_cm_var = tk.StringVar()
         self.plate_studs_w_var = tk.StringVar()
         self.plate_studs_h_var = tk.StringVar()
         self.plate_size_cm_var = tk.StringVar()
-        self._add_labeled_entry(root, t("lbl_block_w"), self.block_studs_w_var, 5, 0)
-        self._add_labeled_entry(root, t("lbl_block_h"), self.block_studs_h_var, 5, 2)
-        self._add_labeled_entry(root, t("lbl_block_cm"), self.block_size_cm_var, 6, 0)
-        self._add_labeled_entry(root, t("lbl_plate_w"), self.plate_studs_w_var, 7, 0)
-        self._add_labeled_entry(root, t("lbl_plate_h"), self.plate_studs_h_var, 7, 2)
-        self._add_labeled_entry(root, t("lbl_plate_cm"), self.plate_size_cm_var, 8, 0)
+        self._add_labeled_entry(root, t("lbl_block_w"), self.block_studs_w_var, 10, 0)
+        self._add_labeled_entry(root, t("lbl_block_h"), self.block_studs_h_var, 10, 2)
+        self._add_labeled_entry(root, t("lbl_block_cm"), self.block_size_cm_var, 11, 0)
+        self._add_labeled_entry(root, t("lbl_plate_w"), self.plate_studs_w_var, 12, 0)
+        self._add_labeled_entry(root, t("lbl_plate_h"), self.plate_studs_h_var, 12, 2)
+        self._add_labeled_entry(root, t("lbl_plate_cm"), self.plate_size_cm_var, 13, 0)
 
     # ── classes tab ─────────────────────────────────────────
 
@@ -313,6 +352,21 @@ class ControlStationApp(tk.Tk):
         ttk.Button(ubtn, text=t("btn_update_unit"), command=self.on_unit_update).pack(side=tk.LEFT, padx=4)
         ttk.Button(ubtn, text=t("btn_delete_unit"), command=self.on_unit_delete).pack(side=tk.LEFT, padx=4)
 
+    def _build_detection_tab(self) -> None:
+        root = self.tab_detection
+        root.columnconfigure(0, weight=1)
+        root.rowconfigure(0, weight=1)
+        self.detection_monitor = DetectionMonitorWidget(root)
+        self.detection_monitor.grid(row=0, column=0, sticky="nsew")
+        self._refresh_detection_monitor_colors()
+
+    def _refresh_detection_monitor_colors(self) -> None:
+        colors = {}
+        for cls in self.config_data.classes:
+            if cls.color_hex:
+                colors[cls.class_id] = cls.color_hex
+        self.detection_monitor.set_class_colors(colors)
+
     # ── helpers ─────────────────────────────────────────────
 
     def _add_labeled_entry(self, parent, label, variable, row, col, parent_col_span=1):
@@ -327,6 +381,12 @@ class ControlStationApp(tk.Tk):
         self.cam_width_var.set(str(cfg.camera.width))
         self.cam_height_var.set(str(cfg.camera.height))
         self.cam_fps_var.set(str(cfg.camera.fps))
+        self.table_width_var.set(str(cfg.table.table_width_mm))
+        self.table_height_var.set(str(cfg.table.table_height_mm))
+        self.cell_width_var.set(str(cfg.table.cell_width_mm))
+        self.cell_height_var.set(str(cfg.table.cell_height_mm))
+        self.block_width_var.set(str(cfg.table.block_width_mm))
+        self.block_height_var.set(str(cfg.table.block_height_mm))
         self.grid_rows_var.set(str(cfg.grid.rows))
         self.grid_cols_var.set(str(cfg.grid.cols))
         self.grid_gap_var.set(str(cfg.grid.cell_gap_mm))
@@ -362,6 +422,7 @@ class ControlStationApp(tk.Tk):
             self.unit_tree.delete(item)
         for u in cfg.layout.units:
             self.unit_tree.insert("", tk.END, values=(u.unit_id, u.camera_index, u.grid_row_offset, u.grid_col_offset, u.grid_rows, u.grid_cols))
+        self._refresh_detection_monitor_colors()
 
     def _collect_config_from_form(self) -> ProjectConfig:
         cfg = self.config_data
@@ -369,6 +430,12 @@ class ControlStationApp(tk.Tk):
         cfg.camera.width = int(self.cam_width_var.get())
         cfg.camera.height = int(self.cam_height_var.get())
         cfg.camera.fps = int(self.cam_fps_var.get())
+        cfg.table.table_width_mm = float(self.table_width_var.get())
+        cfg.table.table_height_mm = float(self.table_height_var.get())
+        cfg.table.cell_width_mm = float(self.cell_width_var.get())
+        cfg.table.cell_height_mm = float(self.cell_height_var.get())
+        cfg.table.block_width_mm = float(self.block_width_var.get())
+        cfg.table.block_height_mm = float(self.block_height_var.get())
         cfg.grid.rows = int(self.grid_rows_var.get())
         cfg.grid.cols = int(self.grid_cols_var.get())
         cfg.grid.cell_gap_mm = float(self.grid_gap_var.get())
@@ -439,6 +506,70 @@ class ControlStationApp(tk.Tk):
         if val == t("calib_target_global"):
             return None
         return val.split(" ")[1]
+
+    # ── detection actions ─────────────────────────────────
+
+    def _has_color_calibration(self, config: ProjectConfig) -> bool:
+        return any(cls.calibrated_lab and len(cls.calibrated_lab) == 3 for cls in config.classes)
+
+    def _on_detection_status(self, status: DetectionStatus) -> None:
+        self.after(0, lambda: self._apply_detection_status(status))
+
+    def _apply_detection_status(self, status: DetectionStatus) -> None:
+        if status.error:
+            self.detection_status_var.set(t("detection_error_fmt", err=status.error))
+            self.detection_monitor.show_idle()
+            messagebox.showerror(t("panel_detection"), status.error)
+            return
+        if status.running:
+            self.detection_status_var.set(t(
+                "detection_running_fmt",
+                seq=status.seq,
+                changed=status.changed_count,
+                rows=status.grid_rows,
+                cols=status.grid_cols,
+                clients=status.client_count,
+                url=status.ws_url,
+            ))
+            self.detection_monitor.update_frame(
+                seq=status.seq,
+                rows=status.grid_rows,
+                cols=status.grid_cols,
+                cells=status.cells,
+                changed_cells=status.changed_cells,
+                client_count=status.client_count,
+                ws_url=status.ws_url,
+            )
+        else:
+            self.detection_status_var.set(t("detection_stopped"))
+            self.detection_monitor.show_idle()
+
+    def on_start_detection(self) -> None:
+        if self.detection_runner.is_running:
+            messagebox.showinfo(t("panel_detection"), t("dlg_detection_running"))
+            return
+        try:
+            config = self._collect_config_from_form()
+            port = int(self.ws_port_var.get())
+            fps = float(self.detect_fps_var.get())
+        except ValueError:
+            messagebox.showerror(t("dlg_param_error"), t("dlg_check_num_fmt"))
+            return
+        if not self._has_color_calibration(config):
+            messagebox.showwarning(t("panel_detection"), t("dlg_no_color_calib"))
+            return
+        self.config_data = config
+        self._refresh_detection_monitor_colors()
+        self.camera_preview.stop()
+        try:
+            self.detection_runner.start(config, port=port, target_fps=fps)
+        except Exception as exc:
+            messagebox.showerror(t("panel_detection"), str(exc))
+
+    def on_stop_detection(self) -> None:
+        self.detection_runner.stop()
+        self.detection_status_var.set(t("detection_stopped"))
+        self.detection_monitor.show_idle()
 
     def on_test_camera(self) -> None:
         try:
@@ -609,7 +740,7 @@ class ControlStationApp(tk.Tk):
         try:
             sub_r, sub_c = int(self.grid_rows_var.get()), int(self.grid_cols_var.get())
         except ValueError:
-            sub_r, sub_c = 16, 16
+            sub_r, sub_c = 4, 8
         for item in self.unit_tree.get_children():
             self.unit_tree.delete(item)
         ci = 0
@@ -676,5 +807,6 @@ class ControlStationApp(tk.Tk):
         self.status_var.set(t("config_saved_default", p=path))
 
     def destroy(self):
+        self.detection_runner.stop()
         self.camera_preview.stop()
         super().destroy()

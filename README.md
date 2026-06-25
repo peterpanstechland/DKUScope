@@ -42,15 +42,10 @@ DKUScope/
 ```bash
 cd software/python
 pip install -r requirements.txt
-
-# 1. Configure and calibrate
 python main.py
-
-# 2. Run detection + WebSocket server
-python scripts/run_detection_server.py
-
-# 3. In TouchDesigner, connect WebSocket DAT to ws://localhost:8765
 ```
+
+**Windows release build:** see [`software/python/README.md`](software/python/README.md#build-windows-executable-pyinstaller). Push a tag `v0.1.0` to trigger GitHub Actions release.
 
 ## Features
 
