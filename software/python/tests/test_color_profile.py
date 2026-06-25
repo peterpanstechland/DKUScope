@@ -81,6 +81,32 @@ def test_color_classifier_box_match():
     assert conf > 0.5
 
 
+def test_pink_not_classified_as_light_blue():
+    pink = BuildingClassConfig(
+        class_id=5,
+        label="pink",
+        lab_samples=[[193, 164, 123], [190, 162, 125], [195, 166, 121]],
+    )
+    blue = BuildingClassConfig(
+        class_id=7,
+        label="blue",
+        lab_samples=[[202, 113, 107], [198, 115, 110]],
+    )
+    ensure_class_color_profile(pink)
+    ensure_class_color_profile(blue)
+    det = DetectionConfig(confidence_threshold=40.0, color_match_l_weight=0.35)
+    classifier = ColorClassifier([pink, blue], det)
+
+    cid, label, _ = classifier.classify(np.array([193.0, 164.0, 123.0]))
+    assert cid == 5
+
+    cid, label, _ = classifier.classify(np.array([175.0, 155.0, 115.0]))
+    assert cid == 5, f"shadow pink misclassified as {label}"
+
+    cid, label, _ = classifier.classify(np.array([202.0, 113.0, 107.0]))
+    assert cid == 7
+
+
 def test_profile_from_legacy_centroid():
     c, lab_min, lab_max = profile_from_legacy_centroid([100, 128, 128])
     assert c == [100.0, 128.0, 128.0]

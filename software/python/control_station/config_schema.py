@@ -142,6 +142,7 @@ class DetectionConfig:
     debug_overlay: bool = False
     color_range_l_padding: float = 8.0
     color_range_ab_padding: float = 12.0
+    color_match_l_weight: float = 0.35
 
 
 @dataclass

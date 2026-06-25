@@ -6,6 +6,9 @@ from typing import List, Optional
 import cv2
 import numpy as np
 
+from .cell_analysis import preprocess_frame
+from .config_schema import DetectionConfig
+
 
 SAMPLE_RADIUS = 15
 
@@ -81,6 +84,7 @@ def run_color_pick(
     height: int,
     fps: int,
     class_label: str = "",
+    detection: Optional[DetectionConfig] = None,
 ) -> Optional[ColorSampleResult]:
     cap = cv2.VideoCapture(camera_index, cv2.CAP_DSHOW)
     if not cap.isOpened():
@@ -123,6 +127,8 @@ def run_color_pick(
         ok, frame = cap.read()
         if not ok:
             continue
+        if detection is not None:
+            frame = preprocess_frame(frame, detection)
         current_frame = frame.copy()
         preview = current_frame.copy()
 

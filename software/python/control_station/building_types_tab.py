@@ -7,7 +7,7 @@ from typing import Callable, List, Optional
 from .camera_pick_dialog import ask_camera_for_color_pick
 from .color_profile import append_lab_sample, append_lab_samples, ensure_class_color_profile
 from .color_pick_service import run_color_pick
-from .config_schema import BuildingClassConfig, TableUnitConfig
+from .config_schema import BuildingClassConfig, DetectionConfig, TableUnitConfig
 from .i18n import t
 from .log_service import get_logger
 
@@ -28,12 +28,14 @@ class BuildingTypesTab(ttk.Frame):
         get_camera_settings: Callable[[], tuple[int, int, int, int]],
         get_layout_units: Callable[[], List[TableUnitConfig]],
         enumerate_cameras_fn: Callable[[], list],
+        get_detection_config: Callable[[], DetectionConfig],
         **kwargs,
     ) -> None:
         super().__init__(parent, padding=12, **kwargs)
         self._get_camera_settings = get_camera_settings
         self._get_layout_units = get_layout_units
         self._enumerate_cameras = enumerate_cameras_fn
+        self._get_detection_config = get_detection_config
         self._all_classes: List[BuildingClassConfig] = []
         self._build_ui()
 
@@ -451,7 +453,11 @@ class BuildingTypesTab(ttk.Frame):
         label = self.class_label_zh_var.get().strip() or self.class_label_en_var.get().strip() or "?"
         hint = t("dlg_color_append_hint") if append_mode else t("dlg_color_hint", label=label)
         messagebox.showinfo(t("dlg_color_hint_title"), hint)
-        result = run_color_pick(idx, w, h, fps, class_label=label)
+        result = run_color_pick(
+            idx, w, h, fps,
+            class_label=label,
+            detection=self._get_detection_config(),
+        )
         if result is None:
             messagebox.showwarning(t("dlg_color_result"), t("dlg_color_fail"))
             return

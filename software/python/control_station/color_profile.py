@@ -133,3 +133,18 @@ def range_diagonal(lab_min: List[float], lab_max: List[float]) -> float:
         return 200.0
     d = np.array(lab_max, dtype=np.float64) - np.array(lab_min, dtype=np.float64)
     return float(max(np.linalg.norm(d), 1.0))
+
+
+def lab_distance(
+    lab: np.ndarray,
+    centroid: np.ndarray,
+    l_weight: float = 0.35,
+) -> float:
+    """Lab distance with reduced L sensitivity (lighting varies more than hue)."""
+    d = lab.astype(np.float64) - centroid.astype(np.float64)
+    return float(np.sqrt((l_weight * d[0]) ** 2 + d[1] ** 2 + d[2] ** 2))
+
+
+def lab_ab_distance(lab: np.ndarray, centroid: np.ndarray) -> float:
+    d = lab.astype(np.float64) - centroid.astype(np.float64)
+    return float(np.sqrt(d[1] ** 2 + d[2] ** 2))

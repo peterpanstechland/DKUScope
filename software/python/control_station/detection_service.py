@@ -10,7 +10,13 @@ import numpy as np
 from .background_refs import BackgroundRef, load_background_refs
 from .merged_preview import MergedSlice, build_merged_preview
 from .cell_analysis import analyze_cell, preprocess_frame
-from .color_profile import ensure_class_color_profile, lab_in_range, range_diagonal
+from .color_profile import (
+    ensure_class_color_profile,
+    lab_ab_distance,
+    lab_distance,
+    lab_in_range,
+    range_diagonal,
+)
 from .config_schema import BuildingClassConfig, CalibrationConfig, DetectionConfig, ProjectConfig
 
 
@@ -78,32 +84,39 @@ class ColorClassifier:
 
     def classify(self, lab_median: np.ndarray) -> Tuple[int, str, float]:
         threshold = self._detection.confidence_threshold
-        box_matches: List[Tuple[int, str, float]] = []
+        l_weight = self._detection.color_match_l_weight
+        box_matches: List[Tuple[int, str, float, float]] = []
 
         for class_id, centroid, lab_min, lab_max, label in self._profiles:
             if lab_in_range(lab_median, lab_min.tolist(), lab_max.tolist()):
-                dist = float(np.linalg.norm(lab_median - centroid))
+                dist = lab_distance(lab_median, centroid, l_weight=l_weight)
+                ab_dist = lab_ab_distance(lab_median, centroid)
                 diag = range_diagonal(lab_min.tolist(), lab_max.tolist())
                 confidence = max(0.0, 1.0 - dist / diag)
-                box_matches.append((class_id, label, confidence))
+                box_matches.append((class_id, label, confidence, ab_dist))
 
         if box_matches:
-            box_matches.sort(key=lambda m: m[2], reverse=True)
+            box_matches.sort(key=lambda m: (m[3], -m[2]))
             best = box_matches[0]
             return best[0], best[1], best[2]
 
         best_id = -1
         best_label = "unknown"
-        best_dist = float("inf")
+        best_ab_dist = float("inf")
+        best_weighted_dist = float("inf")
         for class_id, centroid, label in self._centroids:
-            dist = float(np.linalg.norm(lab_median - centroid))
-            if dist < best_dist:
-                best_dist = dist
+            ab_dist = lab_ab_distance(lab_median, centroid)
+            weighted_dist = lab_distance(lab_median, centroid, l_weight=l_weight)
+            if ab_dist < best_ab_dist or (
+                ab_dist == best_ab_dist and weighted_dist < best_weighted_dist
+            ):
+                best_ab_dist = ab_dist
+                best_weighted_dist = weighted_dist
                 best_id = class_id
                 best_label = label
 
-        confidence = max(0.0, 1.0 - best_dist / 200.0)
-        if best_dist > threshold:
+        confidence = max(0.0, 1.0 - best_weighted_dist / 200.0)
+        if best_ab_dist > threshold:
             return -1, "unknown", confidence
         return best_id, best_label, confidence
 

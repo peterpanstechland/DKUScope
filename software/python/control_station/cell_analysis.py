@@ -116,11 +116,20 @@ def analyze_cell(
     if area_ratio < config.min_block_area_ratio:
         return CellAnalysisResult(full_median, False, area_ratio, True)
 
-    masked_pixels = lab_roi[mask > 0]
+    eroded = cv2.erode(
+        mask,
+        cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)),
+        iterations=1,
+    )
+    color_mask = eroded if np.count_nonzero(eroded) >= 8 else mask
+    masked_pixels = lab_roi[color_mask > 0]
     if masked_pixels.size == 0:
         return CellAnalysisResult(full_median, False, area_ratio, True)
 
-    lab_median = np.median(masked_pixels.reshape(-1, 3), axis=0)
+    chroma = _chroma_map(lab_roi)[color_mask > 0]
+    saturated = masked_pixels[chroma >= config.chroma_threshold]
+    color_pixels = saturated if saturated.shape[0] >= 8 else masked_pixels
+    lab_median = np.median(color_pixels.reshape(-1, 3), axis=0)
     if area_ratio >= config.min_block_area_ratio:
         is_empty = False
     return CellAnalysisResult(lab_median, True, area_ratio, is_empty)

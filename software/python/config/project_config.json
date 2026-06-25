@@ -27,7 +27,8 @@
     "clahe_clip_limit": 2.0,
     "debug_overlay": false,
     "color_range_l_padding": 8.0,
-    "color_range_ab_padding": 12.0
+    "color_range_ab_padding": 12.0,
+    "color_match_l_weight": 0.35
   },
   "layout": {
     "enabled": true,

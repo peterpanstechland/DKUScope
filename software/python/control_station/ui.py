@@ -496,6 +496,7 @@ class ControlStationApp(tk.Tk):
             get_camera_settings=self._get_camera_settings_with_index,
             get_layout_units=lambda: list(self.config_data.layout.units),
             enumerate_cameras_fn=self.refresh_cameras_and_list,
+            get_detection_config=lambda: self.config_data.detection,
         )
         self.building_types_tab.pack(fill=tk.BOTH, expand=True)
 
