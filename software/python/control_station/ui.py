@@ -526,11 +526,13 @@ class ControlStationApp(tk.Tk):
                 "detection_running_fmt",
                 seq=status.seq,
                 changed=status.changed_count,
+                buildings=status.building_count,
                 rows=status.grid_rows,
                 cols=status.grid_cols,
                 clients=status.client_count,
                 url=status.ws_url,
             ))
+            coverage = status.metrics.get("coverage_ratio", 0.0)
             self.detection_monitor.update_frame(
                 seq=status.seq,
                 rows=status.grid_rows,
@@ -539,6 +541,8 @@ class ControlStationApp(tk.Tk):
                 changed_cells=status.changed_cells,
                 client_count=status.client_count,
                 ws_url=status.ws_url,
+                building_count=status.building_count,
+                coverage=coverage,
             )
         else:
             self.detection_status_var.set(t("detection_stopped"))

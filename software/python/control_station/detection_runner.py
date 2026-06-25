@@ -5,10 +5,11 @@ import logging
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Callable, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from .config_schema import ProjectConfig
 from .detection_service import CellResult, GridDetector, MultiTableDetector, open_camera
+from .reconstruction_service import reconstruct_world_state
 from .ws_server import StateServer
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ class DetectionStatus:
     running: bool = False
     seq: int = 0
     changed_count: int = 0
+    building_count: int = 0
     grid_rows: int = 0
     grid_cols: int = 0
     client_count: int = 0
@@ -26,6 +28,8 @@ class DetectionStatus:
     error: str = ""
     cells: List[CellResult] = field(default_factory=list)
     changed_cells: List[CellResult] = field(default_factory=list)
+    metrics: Dict[str, float] = field(default_factory=dict)
+    processing_ms: float = 0.0
 
 
 class DetectionRunner:
@@ -127,35 +131,54 @@ class DetectionRunner:
 
         try:
             while not self._stop_event.is_set():
-                t0 = time.monotonic()
+                loop_start = time.perf_counter()
+                capture_ms: Optional[float] = None
 
                 if multi_mode and multi_det:
+                    process_start = time.perf_counter()
                     result = multi_det.process_all()
+                    processing_ms = (time.perf_counter() - process_start) * 1000.0
                 elif single_det and cap:
+                    capture_start = time.perf_counter()
                     ok, frame = cap.read()
+                    capture_ms = (time.perf_counter() - capture_start) * 1000.0
                     if not ok:
                         await asyncio.sleep(0.01)
                         continue
+                    process_start = time.perf_counter()
                     result = single_det.process_frame(frame)
+                    processing_ms = (time.perf_counter() - process_start) * 1000.0
                 else:
                     await asyncio.sleep(0.1)
                     continue
 
-                await server.broadcast(result)
+                world = reconstruct_world_state(result, config)
+
+                await server.broadcast_frame_state(result)
+                await server.broadcast_world_state(world)
+                await server.broadcast_health(
+                    seq=result.seq,
+                    timestamp_ms=result.timestamp_ms,
+                    capture_ms=round(capture_ms, 3) if capture_ms is not None else None,
+                    processing_ms=round(processing_ms, 3),
+                )
 
                 self._emit(DetectionStatus(
                     running=True,
                     seq=result.seq,
                     changed_count=len(result.changed_cells),
+                    building_count=len(world.buildings),
                     grid_rows=result.rows,
                     grid_cols=result.cols,
                     client_count=len(server._clients),
                     ws_url=ws_url,
                     cells=list(result.cells),
                     changed_cells=list(result.changed_cells),
+                    metrics=dict(world.metrics),
+                    processing_ms=round(processing_ms, 3),
                 ))
 
-                elapsed = time.monotonic() - t0
+                elapsed = time.monotonic() - loop_start
                 await asyncio.sleep(max(0, interval - elapsed))
         finally:
             if cap:

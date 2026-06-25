@@ -44,9 +44,9 @@ def main() -> None:
             logger.error("%s", status.error)
         elif status.running and status.seq % 10 == 0:
             logger.info(
-                "seq=%d grid=%dx%d clients=%d %s",
+                "seq=%d grid=%dx%d buildings=%d clients=%d %s",
                 status.seq, status.grid_rows, status.grid_cols,
-                status.client_count, status.ws_url,
+                status.building_count, status.client_count, status.ws_url,
             )
 
     runner = DetectionRunner(on_status=on_status)

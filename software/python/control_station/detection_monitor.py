@@ -95,6 +95,8 @@ class DetectionMonitorWidget(ttk.Frame):
         changed_cells: List[CellResult],
         client_count: int,
         ws_url: str,
+        building_count: int = 0,
+        coverage: float = 0.0,
     ) -> None:
         self.summary_var.set(t(
             "detect_monitor_summary",
@@ -102,6 +104,8 @@ class DetectionMonitorWidget(ttk.Frame):
             rows=rows,
             cols=cols,
             changed=len(changed_cells),
+            buildings=building_count,
+            coverage=coverage,
             clients=client_count,
             url=ws_url,
         ))

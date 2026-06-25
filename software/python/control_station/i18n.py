@@ -163,8 +163,8 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     "lbl_detect_fps": {"zh_CN": "检测帧率", "en_US": "Detect FPS"},
     "detection_stopped": {"zh_CN": "检测已停止", "en_US": "Detection stopped"},
     "detection_running_fmt": {
-        "zh_CN": "检测中 seq={seq} 变更={changed} 网格={rows}x{cols} 客户端={clients} {url}",
-        "en_US": "Running seq={seq} changed={changed} grid={rows}x{cols} clients={clients} {url}",
+        "zh_CN": "检测中 seq={seq} 变更={changed} 建筑={buildings} 网格={rows}x{cols} 客户端={clients} {url}",
+        "en_US": "Running seq={seq} changed={changed} buildings={buildings} grid={rows}x{cols} clients={clients} {url}",
     },
     "detection_error_fmt": {"zh_CN": "检测错误: {err}", "en_US": "Detection error: {err}"},
     "dlg_no_color_calib": {
@@ -182,8 +182,8 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     "detect_monitor_grid": {"zh_CN": "当前识别结果（网格图）", "en_US": "Live Grid Map"},
     "detect_monitor_changes": {"zh_CN": "最近变更", "en_US": "Recent Changes"},
     "detect_monitor_summary": {
-        "zh_CN": "seq={seq} | 网格 {rows}×{cols} | 本帧变更 {changed} | TD客户端 {clients} | {url}",
-        "en_US": "seq={seq} | grid {rows}×{cols} | changed {changed} | TD clients {clients} | {url}",
+        "zh_CN": "seq={seq} | 网格 {rows}×{cols} | 变更 {changed} | 建筑 {buildings} | 覆盖率 {coverage:.0%} | TD客户端 {clients} | {url}",
+        "en_US": "seq={seq} | grid {rows}×{cols} | changed {changed} | buildings {buildings} | coverage {coverage:.0%} | TD clients {clients} | {url}",
     },
     "col_detect_seq": {"zh_CN": "帧号", "en_US": "Seq"},
     "col_detect_row": {"zh_CN": "行", "en_US": "Row"},
