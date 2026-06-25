@@ -306,6 +306,10 @@ _STRINGS: Dict[str, Dict[str, str]] = {
         "zh_CN": "已追加 {added} 个样本（共 {total} 个）。\n均值 Lab：{lab}\nHEX：{hex}",
         "en_US": "Added {added} sample(s) ({total} total).\nMean Lab: {lab}\nHEX: {hex}",
     },
+    "dlg_save_config_reminder": {
+        "zh_CN": "请点击顶部「保存为默认配置」或「保存配置」，否则重启后样本不会保留。",
+        "en_US": "Click Save as Default Config (top bar) or samples will be lost after restart.",
+    },
     "sect_detection_algo": {"zh_CN": "检测算法", "en_US": "Detection Algorithm"},
     "chk_det_enabled": {"zh_CN": "启用增强检测（掩膜+空桌参考）", "en_US": "Enhanced detection (mask + bg ref)"},
     "chk_det_clahe": {"zh_CN": "CLAHE 灯光归一化", "en_US": "CLAHE lighting normalize"},

@@ -88,6 +88,8 @@ def ensure_class_color_profile(
     cls.lab_min = lab_min
     cls.lab_max = lab_max
     cls.calibrated_lab = c
+    if not cls.lab_samples:
+        cls.lab_samples = [list(c)]
     return cls
 
 

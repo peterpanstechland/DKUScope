@@ -23,6 +23,22 @@ def test_legacy_calibrated_lab_migration():
     assert cls.lab_centroid == [50.0, 160.0, 140.0]
     assert len(cls.lab_min) == 3
     assert cls.lab_min[0] < cls.lab_max[0]
+    assert len(cls.lab_samples) == 1
+    assert cls.lab_samples[0] == [50.0, 160.0, 140.0]
+
+
+def test_legacy_centroid_without_samples_migrates_on_load():
+    cls = BuildingClassConfig(
+        class_id=3,
+        label="test",
+        lab_centroid=[197.0, 131.0, 206.0],
+        lab_min=[189.0, 119.0, 194.0],
+        lab_max=[205.0, 143.0, 218.0],
+        calibrated_lab=[197.0, 131.0, 206.0],
+    )
+    ensure_class_color_profile(cls)
+    assert len(cls.lab_samples) == 1
+    assert cls.lab_samples[0][0] == pytest.approx(197.0, abs=0.1)
 
 
 def test_samples_compute_min_max():

@@ -202,6 +202,8 @@ class BuildingTypesTab(ttk.Frame):
             cls.lab_min = list(existing.lab_min)
             cls.lab_max = list(existing.lab_max)
             cls.lab_std = list(existing.lab_std)
+        elif calibrated_lab and len(calibrated_lab) == 3:
+            cls.lab_samples = [list(calibrated_lab)]
         ensure_class_color_profile(cls)
         return cls
 
@@ -256,7 +258,10 @@ class BuildingTypesTab(ttk.Frame):
         self._apply_filter()
 
     def load_classes(self, classes: List[BuildingClassConfig]) -> None:
-        self._all_classes = list(classes)
+        self._all_classes = []
+        for cls in classes:
+            ensure_class_color_profile(cls)
+            self._all_classes.append(cls)
         self._apply_filter()
 
     def collect_classes(self) -> List[BuildingClassConfig]:
@@ -448,11 +453,25 @@ class BuildingTypesTab(ttk.Frame):
             total = len(target.lab_samples)
             messagebox.showinfo(
                 t("dlg_color_result"),
-                t("dlg_color_append_ok", added=added, total=total, lab=lab_str, hex=result.hex_color),
+                t("dlg_color_append_ok", added=added, total=total, lab=lab_str, hex=result.hex_color)
+                + "\n\n" + t("dlg_save_config_reminder"),
             )
         else:
             self.class_calibrated_lab_var.set(lab_str)
-            messagebox.showinfo(t("dlg_color_result"), t("dlg_color_ok", lab=lab_str, hex=result.hex_color))
+            class_id_str = self.class_id_var.get().strip()
+            if class_id_str:
+                try:
+                    existing = self._find_class(int(class_id_str))
+                    if existing:
+                        append_lab_samples(existing, result.lab_samples or [result.lab_values])
+                        self._profile_display(existing)
+                        self._apply_filter()
+                except ValueError:
+                    pass
+            messagebox.showinfo(
+                t("dlg_color_result"),
+                t("dlg_color_ok", lab=lab_str, hex=result.hex_color) + "\n\n" + t("dlg_save_config_reminder"),
+            )
 
         calib_logger.info(
             "Color sampled for %s lab=%s hex=%s append=%s n=%d",
