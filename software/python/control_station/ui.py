@@ -494,6 +494,8 @@ class ControlStationApp(tk.Tk):
         self.building_types_tab = BuildingTypesTab(
             self.tab_classes,
             get_camera_settings=self._get_camera_settings_with_index,
+            get_layout_units=lambda: list(self.config_data.layout.units),
+            enumerate_cameras_fn=self.refresh_cameras_and_list,
         )
         self.building_types_tab.pack(fill=tk.BOTH, expand=True)
 
@@ -705,6 +707,11 @@ class ControlStationApp(tk.Tk):
             self.camera_index_var.set(values[0])
         self.camera_cal_tab.set_camera_values(values)
         self.status_var.set(t("cameras_found", n=len(self.cameras)))
+
+    def refresh_cameras_and_list(self) -> list:
+        """Refresh camera list and return CameraInfo list (for color-pick dialog)."""
+        self.refresh_cameras()
+        return self.cameras
 
     def _refresh_projection_status(self) -> None:
         p = self.config_data.projection

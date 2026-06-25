@@ -4,9 +4,10 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Callable, List, Optional
 
+from .camera_pick_dialog import ask_camera_for_color_pick
 from .color_profile import append_lab_sample, append_lab_samples, ensure_class_color_profile
 from .color_pick_service import run_color_pick
-from .config_schema import BuildingClassConfig
+from .config_schema import BuildingClassConfig, TableUnitConfig
 from .i18n import t
 from .log_service import get_logger
 
@@ -25,10 +26,14 @@ class BuildingTypesTab(ttk.Frame):
         self,
         parent: tk.Widget,
         get_camera_settings: Callable[[], tuple[int, int, int, int]],
+        get_layout_units: Callable[[], List[TableUnitConfig]],
+        enumerate_cameras_fn: Callable[[], list],
         **kwargs,
     ) -> None:
         super().__init__(parent, padding=12, **kwargs)
         self._get_camera_settings = get_camera_settings
+        self._get_layout_units = get_layout_units
+        self._enumerate_cameras = enumerate_cameras_fn
         self._all_classes: List[BuildingClassConfig] = []
         self._build_ui()
 
@@ -125,12 +130,20 @@ class BuildingTypesTab(ttk.Frame):
 
         detail_btns = ttk.Frame(detail)
         detail_btns.grid(row=13, column=0, columnspan=6, sticky="ew", pady=(12, 0))
-        ttk.Button(detail_btns, text=t("btn_save_type"), command=self._save).pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Button(detail_btns, text=t("btn_color_pick"), command=self._color_pick).pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Button(detail_btns, text=t("btn_append_sample"), command=self._append_sample).pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Button(detail_btns, text=t("btn_recalc_profile"), command=self._recalc_profile).pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Button(detail_btns, text=t("btn_clear_samples"), command=self._clear_samples).pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Button(detail_btns, text=t("btn_new_blank"), command=self._clear_form).pack(side=tk.LEFT)
+        for c in range(3):
+            detail_btns.columnconfigure(c, weight=1)
+        btn_specs = (
+            (0, 0, t("btn_save_type"), self._save),
+            (0, 1, t("btn_color_pick"), self._color_pick),
+            (0, 2, t("btn_append_sample"), self._append_sample),
+            (1, 0, t("btn_recalc_profile"), self._recalc_profile),
+            (1, 1, t("btn_clear_samples"), self._clear_samples),
+            (1, 2, t("btn_new_blank"), self._clear_form),
+        )
+        for row, col, label, cmd in btn_specs:
+            ttk.Button(detail_btns, text=label, command=cmd).grid(
+                row=row, column=col, sticky="ew", padx=2, pady=2,
+            )
 
         ttk.Label(self, text=t("building_tab_hint"), wraplength=900, foreground="#555").grid(
             row=2, column=0, columnspan=2, sticky="w", pady=(8, 0),
@@ -408,15 +421,33 @@ class BuildingTypesTab(ttk.Frame):
         cls.lab_max = []
         cls.lab_std = []
         cls.calibrated_lab = []
-        self._profile_display(cls)
+        self.class_calibrated_lab_var.set("")
+        self.class_lab_range_var.set("")
+        self.class_samples_var.set("0")
+        self._apply_filter()
         calib_logger.info("Cleared samples for class_id=%s", cls.class_id)
+        messagebox.showinfo(t("btn_clear_samples"), t("samples_cleared_ok"))
 
     def _color_pick(self, append_mode: bool = False) -> None:
         try:
-            idx, w, h, fps = self._get_camera_settings()
+            default_idx, w, h, fps = self._get_camera_settings()
         except ValueError:
             messagebox.showerror(t("dlg_param_error"), t("dlg_check_num"))
             return
+
+        picked = ask_camera_for_color_pick(
+            self,
+            width=w,
+            height=h,
+            fps=fps,
+            default_index=default_idx,
+            layout_units=self._get_layout_units(),
+            enumerate_fn=self._enumerate_cameras,
+        )
+        if picked is None:
+            return
+        idx, w, h, fps = picked
+
         label = self.class_label_zh_var.get().strip() or self.class_label_en_var.get().strip() or "?"
         hint = t("dlg_color_append_hint") if append_mode else t("dlg_color_hint", label=label)
         messagebox.showinfo(t("dlg_color_hint_title"), hint)

@@ -128,6 +128,20 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     "dlg_proj_ok": {"zh_CN": "投影映射标定成功！请点击保存配置。", "en_US": "Projection calibration OK! Click Save."},
     "dlg_proj_param": {"zh_CN": "投影标定参数需要为数字。", "en_US": "Projection params must be numeric."},
     "dlg_color_hint_title": {"zh_CN": "颜色采样提示", "en_US": "Color Pick"},
+    "dlg_pick_camera_title": {"zh_CN": "选择采样相机", "en_US": "Select Camera for Sampling"},
+    "dlg_pick_camera_hint": {
+        "zh_CN": "请选择用于颜色采样的相机。布局单元（A/B/C/D）优先列出；也可选系统检测到的其他相机。双击或点「开始采样」。",
+        "en_US": "Choose a camera for color sampling. Layout units (A/B/C/D) are listed first; other detected cameras appear below.",
+    },
+    "dlg_pick_camera_none": {"zh_CN": "请先选择一台可用相机。", "en_US": "Select an available camera first."},
+    "col_cam_source": {"zh_CN": "来源", "en_US": "Source"},
+    "col_cam_resolution": {"zh_CN": "分辨率", "en_US": "Resolution"},
+    "cam_source_layout": {"zh_CN": "布局单元", "en_US": "Layout unit"},
+    "cam_source_detected": {"zh_CN": "检测到", "en_US": "Detected"},
+    "cam_none": {"zh_CN": "未检测到相机", "en_US": "No camera found"},
+    "btn_refresh_cameras": {"zh_CN": "刷新相机列表", "en_US": "Refresh Cameras"},
+    "btn_start_color_pick": {"zh_CN": "开始采样", "en_US": "Start Sampling"},
+    "btn_cancel": {"zh_CN": "取消", "en_US": "Cancel"},
     "dlg_color_hint": {
         "zh_CN": "即将打开相机为 [{label}] 采样颜色。\n\n请将对应颜色的 block 放在桌面上，\n在画面中点击该 block 区域（可多次点击取均值）。\n\n按 R 重置采样，按 S 保存结果，按 Q 取消。",
         "en_US": "Opening camera to sample color for [{label}].\n\nPlace block on table, click to sample (multi-click for avg).\n\nR=reset, S=save, Q=quit.",
@@ -298,6 +312,10 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     "samples_low_warn": {"zh_CN": "样本偏少", "en_US": "low N"},
     "profile_recalc_ok": {"zh_CN": "已从样本重算 Lab 范围。", "en_US": "Lab range recalculated from samples."},
     "samples_clear_confirm": {"zh_CN": "确定清除该类型的全部 Lab 样本？", "en_US": "Clear all Lab samples for this type?"},
+    "samples_cleared_ok": {
+        "zh_CN": "已清除样本。请重新采样，并点击顶部「保存为默认配置」。",
+        "en_US": "Samples cleared. Re-sample, then Save as Default Config.",
+    },
     "dlg_color_append_hint": {
         "zh_CN": "可在画面中多次点击，每次点击保留一个独立 Lab 样本。\n按 S 保存：本次所有点击会一次性追加到样本池并重算范围。\nR 重置本次点击，Q 取消。",
         "en_US": "Click multiple times; each click adds one Lab sample.\nPress S to append all clicks at once and recalc the range.\nR=reset session, Q=quit.",
