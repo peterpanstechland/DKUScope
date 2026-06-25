@@ -111,8 +111,8 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     "dlg_layout_pos_int": {"zh_CN": "布局行列数必须为正整数。", "en_US": "Layout rows/cols must be positive int."},
     "dlg_layout_gte1": {"zh_CN": "布局行列数必须 >= 1。", "en_US": "Layout rows/cols must be >= 1."},
     "dlg_calib_hint": {
-        "zh_CN": "将打开标定窗口。\n请按顺序点击四个角点：左上 -> 右上 -> 右下 -> 左下。\n按 R 重置，按 S 保存，按 Q 取消。",
-        "en_US": "Opening calibration.\nClick 4 corners: TL -> TR -> BR -> BL.\nR=reset, S=save, Q=quit.",
+        "zh_CN": "将打开标定窗口。\n请按顺序点击四个角点：左上 → 右上 → 右下 → 左下。\n\n重要：角点应落在该相机负责区域的「最外一圈格子」之外（略超出最左/最右/最上/最下格子的边缘），不要只框住中间几格，也不要点在画面黑边或桌框外。\n\n校正预览里应能看到完整 2×4（或你的检测范围）网格；若左右被裁切，按 R 重选并加大范围。\n按 R 重置，S 保存，Q 取消。",
+        "en_US": "Opens the calibration window. Click corners TL → TR → BR → BL.\n\nClick OUTSIDE the outermost grid cells (small margin). If the rectified preview clips left/right, press R and widen the quad.\nR=reset, S=save, Q=quit.",
     },
     "dlg_calib_hint_title": {"zh_CN": "标定提示", "en_US": "Calibration"},
     "dlg_calib_fail": {"zh_CN": "标定未完成或相机打开失败。", "en_US": "Calibration incomplete or camera failed."},

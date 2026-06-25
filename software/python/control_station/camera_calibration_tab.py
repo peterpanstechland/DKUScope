@@ -189,6 +189,8 @@ class CameraUnitCard(ttk.LabelFrame):
         messagebox.showinfo(t("dlg_calib_hint_title"), t("dlg_calib_hint"))
         result = run_four_point_calibration(
             idx, self._global_width, self._global_height, self._global_fps,
+            grid_rows=int(self.range_rows_var.get() or 2),
+            grid_cols=int(self.range_cols_var.get() or 4),
         )
         if result is None:
             messagebox.showwarning(t("dlg_calib_result"), t("dlg_calib_fail"))
