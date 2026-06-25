@@ -2,13 +2,15 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main, master]
+    paths:
+      - "software/python/**"
+      - ".github/workflows/release.yml"
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag (e.g. v0.1.0). Required for manual release."
-        required: true
+        description: "Release tag (e.g. v0.2.0). Leave empty to auto-generate v0.1.<run>."
+        required: false
         type: string
 
 permissions:
@@ -29,10 +31,10 @@ jobs:
         id: version
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ -n "${{ inputs.tag }}" ]; then
             echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+            echo "tag=v0.1.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set up Python
@@ -62,7 +64,7 @@ jobs:
           $tag = "${{ steps.version.outputs.tag }}"
           Compress-Archive -Path dist/DKUScope -DestinationPath "dist/DKUScope-${tag}-windows.zip" -Force
 
-      - name: Create or update GitHub Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
