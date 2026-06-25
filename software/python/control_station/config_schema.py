@@ -118,6 +118,30 @@ class BuildingClassConfig:
     is_fixed_default: bool = False
     allowed_footprints: List[str] = field(default_factory=lambda: ["1x1"])
     calibrated_lab: List[float] = field(default_factory=list)
+    lab_samples: List[List[float]] = field(default_factory=list)
+    lab_centroid: List[float] = field(default_factory=list)
+    lab_min: List[float] = field(default_factory=list)
+    lab_max: List[float] = field(default_factory=list)
+    lab_std: List[float] = field(default_factory=list)
+    color_profile_version: int = 1
+
+
+@dataclass
+class DetectionConfig:
+    enabled: bool = True
+    confidence_threshold: float = 40.0
+    margin_ratio: float = 0.15
+    min_block_area_ratio: float = 0.12
+    background_delta_threshold: float = 18.0
+    chroma_threshold: float = 12.0
+    glare_l_threshold: float = 245.0
+    glare_chroma_max: float = 15.0
+    glare_filter_enabled: bool = True
+    use_clahe: bool = True
+    clahe_clip_limit: float = 2.0
+    debug_overlay: bool = False
+    color_range_l_padding: float = 8.0
+    color_range_ab_padding: float = 12.0
 
 
 @dataclass
@@ -141,6 +165,7 @@ class ProjectConfig:
     projection: ProjectionCalibrationConfig = field(default_factory=ProjectionCalibrationConfig)
     layout: LayoutConfig = field(default_factory=LayoutConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    detection: DetectionConfig = field(default_factory=DetectionConfig)
     building_overlays: List[BuildingOverlaySpec] = field(default_factory=list)
     classes: List[BuildingClassConfig] = field(
         default_factory=lambda: [
@@ -224,6 +249,7 @@ class ProjectConfig:
             units=layout_units,
         )
         logging_cfg = LoggingConfig(**data.get("logging", {}))
+        detection_cfg = DetectionConfig(**data.get("detection", {}))
 
         classes = [
             BuildingClassConfig(**item) for item in data.get("classes", [])
@@ -244,6 +270,7 @@ class ProjectConfig:
             projection=projection,
             layout=layout,
             logging=logging_cfg,
+            detection=detection_cfg,
             building_overlays=building_overlays,
             classes=classes,
         )

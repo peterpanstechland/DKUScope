@@ -65,7 +65,7 @@ def cook(scriptOp):
             try:
                 class_id = int(table[r, c])
             except Exception:
-                class_id = 8   # fallback: Road
+                class_id = 0   # fallback: empty cell
 
             rgba = CLASS_COLORS.get(class_id, CLASS_COLORS[0])
 

@@ -59,12 +59,12 @@ def _handle_frame_state(payload):
     if table.numRows != rows or table.numCols != cols:
         table.clear()
         for _ in range(rows):
-            table.appendRow([8] * cols)   # 8 = Road (default)
+            table.appendRow([0] * cols)   # 0 = empty cell (default)
 
     for cell in cells:
-        r        = cell.get('r', 0)
-        c        = cell.get('c', 0)
-        class_id = int(cell.get('class_id', 8))
+        r        = cell.get('r', cell.get('row', 0))
+        c        = cell.get('c', cell.get('col', 0))
+        class_id = int(cell.get('class_id', 0))
         try:
             table[r, c] = class_id
         except Exception as e:

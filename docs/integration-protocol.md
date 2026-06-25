@@ -27,6 +27,13 @@ Define a simple contract between:
 4. `health`  
    Service heartbeat and frame timing.
 
+## Cell Semantics
+
+- `class_id: 0` — empty cell (no block on table)
+- `class_id: -1` — unknown / low confidence
+- `class_id: 1–8` — building / terrain classes per project config
+- Optional fields on each cell (backward compatible): `occupied` (bool), `mask_area_ratio` (0–1)
+
 ## `frame_state` Example
 
 ```json
@@ -38,7 +45,7 @@ Define a simple contract between:
     "rows": 16,
     "cols": 16,
     "cells": [
-      {"r": 0, "c": 0, "class_id": 8, "conf": 0.97}
+      {"r": 0, "c": 0, "class_id": 0, "label": "empty", "confidence": 1.0, "occupied": false, "mask_area_ratio": 0.0}
     ]
   }
 }

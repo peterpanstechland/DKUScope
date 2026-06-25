@@ -21,6 +21,26 @@ class StateServer:
         self.port = port
         self._clients: Set[WebSocketServerProtocol] = set()
         self._latest_frame: str = "{}"
+        self._server = None
+
+    async def open(self) -> None:
+        if self._server is not None:
+            return
+        self._server = await websockets.serve(
+            self._handler,
+            self.host,
+            self.port,
+            reuse_address=True,
+        )
+        logger.info("WebSocket server listening on ws://%s:%s", self.host, self.port)
+
+    async def close(self) -> None:
+        if self._server is None:
+            return
+        self._server.close()
+        await self._server.wait_closed()
+        self._server = None
+        logger.info("WebSocket server closed on port %s", self.port)
 
     async def _handler(self, ws: WebSocketServerProtocol) -> None:
         self._clients.add(ws)
@@ -94,6 +114,7 @@ class StateServer:
             self._clients.discard(ws)
 
     async def start(self) -> None:
-        server = await websockets.serve(self._handler, self.host, self.port)
-        logger.info("WebSocket server listening on ws://%s:%s", self.host, self.port)
-        await server.wait_closed()
+        """Open the server and block until it is closed."""
+        await self.open()
+        assert self._server is not None
+        await self._server.wait_closed()

@@ -6,8 +6,11 @@ import time
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional
 
+from .background_refs import load_background_refs
 from .config_schema import ProjectConfig
 from .detection_service import CellResult, GridDetector, MultiTableDetector, open_camera
+from .i18n import t
+from .net_utils import is_port_available
 from .reconstruction_service import reconstruct_world_state
 from .log_service import get_logger
 from .ws_server import StateServer
@@ -30,6 +33,7 @@ class DetectionStatus:
     changed_cells: List[CellResult] = field(default_factory=list)
     metrics: Dict[str, float] = field(default_factory=dict)
     processing_ms: float = 0.0
+    debug_frame: Optional[object] = None
 
 
 class DetectionRunner:
@@ -57,6 +61,8 @@ class DetectionRunner:
     ) -> None:
         if self.is_running:
             raise RuntimeError("Detection is already running")
+        if not is_port_available(port, host):
+            raise RuntimeError(t("dlg_port_in_use", port=port))
         self._stop_event.clear()
         self._thread = threading.Thread(
             target=self._run_thread,
@@ -88,6 +94,13 @@ class DetectionRunner:
     ) -> None:
         try:
             asyncio.run(self._detection_loop(config, host, port, target_fps))
+        except OSError as exc:
+            winerr = getattr(exc, "winerror", None)
+            if winerr == 10048 or exc.errno in (10048, 98):
+                self._emit(DetectionStatus(running=False, error=t("dlg_port_in_use", port=port)))
+            else:
+                logger.exception("Detection runner failed")
+                self._emit(DetectionStatus(running=False, error=str(exc)))
         except Exception as exc:
             logger.exception("Detection runner failed")
             self._emit(DetectionStatus(running=False, error=str(exc)))
@@ -104,32 +117,52 @@ class DetectionRunner:
         single_det: Optional[GridDetector] = None
         cap = None
 
-        if multi_mode:
-            multi_det = MultiTableDetector(config)
-            rows, cols = multi_det.total_rows, multi_det.total_cols
-            logger.info(
-                "Multi-table mode: %d units, global grid %dx%d",
-                len(config.layout.units), rows, cols,
-            )
-        else:
-            single_det = GridDetector(config)
-            rows, cols = single_det.rows, single_det.cols
-            cap = open_camera(config)
-            logger.info("Single-table mode: %dx%d", rows, cols)
-
         ws_url = f"ws://localhost:{port}"
         server = StateServer(host=host, port=port)
-        server_task = asyncio.create_task(server.start())
-        interval = 1.0 / target_fps
-
-        self._emit(DetectionStatus(
-            running=True,
-            grid_rows=rows,
-            grid_cols=cols,
-            ws_url=ws_url,
-        ))
 
         try:
+            await server.open()
+        except OSError as exc:
+            winerr = getattr(exc, "winerror", None)
+            if winerr == 10048 or exc.errno in (10048, 98):
+                self._emit(DetectionStatus(running=False, error=t("dlg_port_in_use", port=port)))
+                return
+            raise
+
+        try:
+            if multi_mode:
+                multi_det = MultiTableDetector(config)
+                rows, cols = multi_det.total_rows, multi_det.total_cols
+                logger.info(
+                    "Multi-table mode: %d units, global grid %dx%d",
+                    len(config.layout.units), rows, cols,
+                )
+            else:
+                single_det = GridDetector(config)
+                rows, cols = single_det.rows, single_det.cols
+                cap = open_camera(config)
+                logger.info("Single-table mode: %dx%d", rows, cols)
+
+            if config.detection.enabled:
+                refs = load_background_refs()
+                has_ref = bool(refs.get("global") or any(
+                    refs.get(u.unit_id) for u in config.layout.units
+                ))
+                if not has_ref:
+                    logger.warning(
+                        "Enhanced detection enabled but no background reference captured. "
+                        "Empty-cell detection will be less accurate.",
+                    )
+
+            interval = 1.0 / target_fps
+
+            self._emit(DetectionStatus(
+                running=True,
+                grid_rows=rows,
+                grid_cols=cols,
+                ws_url=ws_url,
+            ))
+
             while not self._stop_event.is_set():
                 loop_start = time.perf_counter()
                 capture_ms: Optional[float] = None
@@ -174,8 +207,9 @@ class DetectionRunner:
                     ws_url=ws_url,
                     cells=list(result.cells),
                     changed_cells=list(result.changed_cells),
-                    metrics=dict(world.metrics),
+                    metrics=world.metrics,
                     processing_ms=round(processing_ms, 3),
+                    debug_frame=result.debug_frame,
                 ))
 
                 elapsed = time.monotonic() - loop_start
@@ -185,9 +219,5 @@ class DetectionRunner:
                 cap.release()
             if multi_det:
                 multi_det.release()
-            server_task.cancel()
-            try:
-                await server_task
-            except asyncio.CancelledError:
-                pass
+            await server.close()
             logger.info("Detection runner stopped")

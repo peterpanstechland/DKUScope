@@ -17,6 +17,7 @@ from .config_schema import (
     ProjectConfig,
     TableUnitConfig,
 )
+from .detection_algo_panel import DetectionAlgoPanel
 from .detection_monitor import DetectionMonitorWidget
 from .detection_runner import DetectionRunner, DetectionStatus
 from .i18n import SUPPORTED_LANGUAGES, get_lang, set_lang, t
@@ -553,11 +554,24 @@ class ControlStationApp(tk.Tk):
 
     def _build_detection_tab(self) -> None:
         root = self.tab_detection
-        root.columnconfigure(0, weight=1)
+        root.columnconfigure(0, weight=3)
+        root.columnconfigure(1, weight=2)
         root.rowconfigure(0, weight=1)
         self.detection_monitor = DetectionMonitorWidget(root)
-        self.detection_monitor.grid(row=0, column=0, sticky="nsew")
+        self.detection_monitor.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
+        self.detection_algo_panel = DetectionAlgoPanel(
+            root,
+            get_config=self._collect_config_from_form,
+            on_apply=self._apply_detection_config,
+        )
+        self.detection_algo_panel.grid(row=0, column=1, sticky="nsew")
         self._refresh_detection_monitor_colors()
+
+    def _apply_detection_config(self, config: ProjectConfig) -> None:
+        self.config_data = config
+        save_config(config)
+        if self.detection_runner.is_running:
+            messagebox.showinfo(t("panel_detection"), t("detection_restart_hint"))
 
     def _refresh_detection_monitor_colors(self) -> None:
         colors = {}
@@ -614,6 +628,7 @@ class ControlStationApp(tk.Tk):
             cfg.layout.layout_cols,
         )
         self._refresh_detection_monitor_colors()
+        self.detection_algo_panel.load_from_config(cfg)
         log = cfg.logging
         self.log_enabled_var.set(log.enabled)
         self.log_app_var.set(log.log_app)
@@ -676,6 +691,7 @@ class ControlStationApp(tk.Tk):
             if units[0].calibration.enabled:
                 cfg.calibration = units[0].calibration
         cfg.logging = self._logging_from_form()
+        cfg.detection = self.detection_algo_panel._detection_from_form()
         configure_logging(cfg.logging)
         return cfg
 
@@ -700,7 +716,12 @@ class ControlStationApp(tk.Tk):
     # ── detection actions ─────────────────────────────────
 
     def _has_color_calibration(self, config: ProjectConfig) -> bool:
-        return any(cls.calibrated_lab and len(cls.calibrated_lab) == 3 for cls in config.classes)
+        for cls in config.classes:
+            if cls.lab_centroid and len(cls.lab_centroid) == 3:
+                return True
+            if cls.calibrated_lab and len(cls.calibrated_lab) == 3:
+                return True
+        return False
 
     def _on_detection_status(self, status: DetectionStatus) -> None:
         self.after(0, lambda: self._apply_detection_status(status))
@@ -723,6 +744,7 @@ class ControlStationApp(tk.Tk):
                 url=status.ws_url,
             ))
             coverage = status.metrics.get("coverage_ratio", 0.0)
+            debug_overlay = self.config_data.detection.debug_overlay
             self.detection_monitor.update_frame(
                 seq=status.seq,
                 rows=status.grid_rows,
@@ -733,6 +755,8 @@ class ControlStationApp(tk.Tk):
                 ws_url=status.ws_url,
                 building_count=status.building_count,
                 coverage=coverage,
+                debug_overlay=debug_overlay,
+                debug_frame=status.debug_frame if debug_overlay else None,
             )
         else:
             self.detection_status_var.set(t("detection_stopped"))
@@ -752,6 +776,14 @@ class ControlStationApp(tk.Tk):
         if not self._has_color_calibration(config):
             messagebox.showwarning(t("panel_detection"), t("dlg_no_color_calib"))
             return
+        if config.detection.enabled:
+            from .background_refs import load_background_refs
+            refs = load_background_refs()
+            has_ref = bool(refs.get("global") or any(
+                refs.get(u.unit_id) for u in config.layout.units
+            ))
+            if not has_ref:
+                messagebox.showwarning(t("panel_detection"), t("dlg_no_bg_ref"))
         self.config_data = config
         self._refresh_detection_monitor_colors()
         self.camera_preview.stop()
@@ -764,6 +796,8 @@ class ControlStationApp(tk.Tk):
             messagebox.showerror(t("panel_detection"), str(exc))
 
     def on_stop_detection(self) -> None:
+        if not self.detection_runner.is_running:
+            return
         self.detection_runner.stop()
         app_logger.info("Detection stopped")
         self.detection_status_var.set(t("detection_stopped"))

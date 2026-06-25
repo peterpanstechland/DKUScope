@@ -35,14 +35,15 @@ def reconstruct_world_state(result: FrameResult, config: ProjectConfig) -> World
     class_cfg_map = {cls.class_id: cls for cls in config.classes}
 
     total_cells = rows * cols if rows > 0 and cols > 0 else 1
-    known_cells = [c for c in cells if c.class_id != -1]
+    occupied_cells = [c for c in cells if c.class_id not in (-1, 0)]
+    known_cells = [c for c in cells if c.class_id not in (-1, 0)]
     green_cells = [c for c in cells if c.class_id == 6]
     water_cells = [c for c in cells if c.class_id == 7]
     road_cells = [c for c in cells if c.class_id == 8]
-    built_cells = [c for c in cells if c.class_id not in (-1, 6, 7, 8)]
+    built_cells = [c for c in cells if c.class_id not in (-1, 0, 6, 7, 8)]
 
     metrics = {
-        "coverage_ratio": round(len(known_cells) / total_cells, 4),
+        "coverage_ratio": round(len(occupied_cells) / total_cells, 4),
         "green_ratio": round(len(green_cells) / total_cells, 4),
         "water_ratio": round(len(water_cells) / total_cells, 4),
         "road_ratio": round(len(road_cells) / total_cells, 4),
@@ -51,7 +52,7 @@ def reconstruct_world_state(result: FrameResult, config: ProjectConfig) -> World
 
     positions_by_class: Dict[int, Set[Tuple[int, int]]] = {}
     for cell in cells:
-        if cell.class_id == -1:
+        if cell.class_id in (-1, 0):
             continue
         positions_by_class.setdefault(cell.class_id, set()).add((cell.row, cell.col))
 

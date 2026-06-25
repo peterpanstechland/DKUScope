@@ -13,6 +13,22 @@
   "calibration": {"enabled": false, "source_points": [], "destination_points": [], "output_width": 640, "output_height": 480},
   "projection": {"enabled": false, "projector_camera_index": 1, "projector_width": 1920, "projector_height": 1080, "pattern_cols": 9, "pattern_rows": 6, "source_points": [], "destination_points": [], "warp_matrix": []},
   "logging": {"enabled": true, "log_app": true, "log_detection": true, "log_websocket": true, "log_calibration": true, "log_ota": true, "log_crash": true},
+  "detection": {
+    "enabled": true,
+    "confidence_threshold": 40.0,
+    "margin_ratio": 0.15,
+    "min_block_area_ratio": 0.12,
+    "background_delta_threshold": 18.0,
+    "chroma_threshold": 12.0,
+    "glare_l_threshold": 245.0,
+    "glare_chroma_max": 15.0,
+    "glare_filter_enabled": true,
+    "use_clahe": true,
+    "clahe_clip_limit": 2.0,
+    "debug_overlay": false,
+    "color_range_l_padding": 8.0,
+    "color_range_ab_padding": 12.0
+  },
   "layout": {
     "enabled": true,
     "layout_rows": 2,

@@ -45,6 +45,9 @@ class DetectionMonitorWidget(ttk.Frame):
         grid_frame.grid(row=1, column=0, sticky="ew", pady=(0, 8))
         self._grid_host = ttk.Frame(grid_frame)
         self._grid_host.pack()
+        self._preview_host = ttk.Frame(grid_frame)
+        self._preview_host.pack(pady=(8, 0))
+        self._preview_canvas: Optional[tk.Canvas] = None
 
         log_frame = ttk.LabelFrame(self, text=t("detect_monitor_changes"), padding=8)
         log_frame.grid(row=2, column=0, sticky="nsew")
@@ -97,6 +100,8 @@ class DetectionMonitorWidget(ttk.Frame):
         ws_url: str,
         building_count: int = 0,
         coverage: float = 0.0,
+        debug_overlay: bool = False,
+        debug_frame: Optional[object] = None,
     ) -> None:
         self.summary_var.set(t(
             "detect_monitor_summary",
@@ -109,7 +114,9 @@ class DetectionMonitorWidget(ttk.Frame):
             clients=client_count,
             url=ws_url,
         ))
-        self._draw_grid(rows, cols, cells)
+        self._draw_grid(rows, cols, cells, debug_overlay=debug_overlay)
+        if debug_frame is not None:
+            self._show_debug_preview(debug_frame, rows, cols)
         for cell in changed_cells:
             self.change_tree.insert("", 0, values=(
                 seq, cell.row, cell.col, cell.label, f"{cell.confidence:.2f}",
@@ -120,7 +127,13 @@ class DetectionMonitorWidget(ttk.Frame):
             for iid in children[200:]:
                 self.change_tree.delete(iid)
 
-    def _draw_grid(self, rows: int, cols: int, cells: List[CellResult]) -> None:
+    def _draw_grid(
+        self,
+        rows: int,
+        cols: int,
+        cells: List[CellResult],
+        debug_overlay: bool = False,
+    ) -> None:
         if self._grid_canvas:
             self._grid_canvas.destroy()
 
@@ -136,7 +149,7 @@ class DetectionMonitorWidget(ttk.Frame):
         for r in range(rows):
             for c in range(cols):
                 cell = cell_map.get((r, c))
-                class_id = cell.class_id if cell else 8
+                class_id = cell.class_id if cell else 0
                 fill = self._class_colors.get(class_id, "#333333")
                 x0 = c * self._cell_px + self._gap_px
                 y0 = r * self._cell_px + self._gap_px
@@ -151,5 +164,46 @@ class DetectionMonitorWidget(ttk.Frame):
                         fill=text_color,
                         font=("", 9, "bold"),
                     )
+                elif debug_overlay and cell:
+                    canvas.create_text(
+                        (x0 + x1) / 2, (y0 + y1) / 2,
+                        text=f"{cell.class_id}\n{cell.confidence:.2f}\n{cell.mask_area_ratio:.0%}",
+                        fill="#cccccc",
+                        font=("", 7),
+                    )
 
         self._grid_canvas = canvas
+
+    def _show_debug_preview(self, frame, rows: int, cols: int) -> None:
+        try:
+            import cv2
+            from PIL import Image, ImageTk
+        except ImportError:
+            return
+
+        if self._preview_canvas:
+            self._preview_canvas.destroy()
+
+        h, w = frame.shape[:2]
+        preview = frame.copy()
+        cell_h = h / rows
+        cell_w = w / cols
+        for r in range(rows + 1):
+            y = int(r * cell_h)
+            cv2.line(preview, (0, y), (w, y), (0, 255, 0), 1)
+        for c in range(cols + 1):
+            x = int(c * cell_w)
+            cv2.line(preview, (x, 0), (x, h), (0, 255, 0), 1)
+
+        rgb = cv2.cvtColor(preview, cv2.COLOR_BGR2RGB)
+        scale = min(320 / w, 240 / h, 1.0)
+        nw, nh = int(w * scale), int(h * scale)
+        if scale < 1.0:
+            rgb = cv2.resize(rgb, (nw, nh))
+        img = Image.fromarray(rgb)
+        photo = ImageTk.PhotoImage(image=img)
+        canvas = tk.Canvas(self._preview_host, width=nw, height=nh, highlightthickness=0)
+        canvas.pack()
+        canvas.create_image(0, 0, anchor=tk.NW, image=photo)
+        canvas.image = photo  # keep reference
+        self._preview_canvas = canvas
