@@ -5,6 +5,7 @@ import pytest
 
 from control_station.color_profile import (
     append_lab_sample,
+    append_lab_samples,
     compute_profile_from_samples,
     ensure_class_color_profile,
     lab_in_range,
@@ -38,6 +39,12 @@ def test_append_sample_updates_profile():
     append_lab_sample(cls, [54.0, 162.0, 138.0])
     assert len(cls.lab_samples) == 2
     assert cls.lab_centroid[0] == pytest.approx(52.0, abs=0.1)
+
+
+def test_append_lab_samples_batch():
+    cls = BuildingClassConfig(class_id=1, label="test")
+    append_lab_samples(cls, [[50.0, 160.0, 140.0], [54.0, 162.0, 138.0], [48.0, 158.0, 142.0]])
+    assert len(cls.lab_samples) == 3
 
 
 def test_lab_in_range_box():

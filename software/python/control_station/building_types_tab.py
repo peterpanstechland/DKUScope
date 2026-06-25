@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Callable, List, Optional
 
-from .color_profile import append_lab_sample, ensure_class_color_profile
+from .color_profile import append_lab_sample, append_lab_samples, ensure_class_color_profile
 from .color_pick_service import run_color_pick
 from .config_schema import BuildingClassConfig
 from .i18n import t
@@ -427,22 +427,34 @@ class BuildingTypesTab(ttk.Frame):
             if not class_id_str:
                 messagebox.showwarning(t("dlg_input_error"), t("dlg_class_id_empty"))
                 return
+            samples_to_add = result.lab_samples or [result.lab_values]
             existing = self._find_class(int(class_id_str))
             if existing is None:
                 cls = self._class_from_form()
                 if cls is None:
                     return
-                append_lab_sample(cls, result.lab_values)
+                append_lab_samples(cls, samples_to_add)
                 self._all_classes.append(cls)
                 self._apply_filter()
                 self.tree.selection_set(f"class-{cls.class_id}")
                 self._profile_display(cls)
+                target = cls
             else:
-                append_lab_sample(existing, result.lab_values)
+                append_lab_samples(existing, samples_to_add)
                 self._profile_display(existing)
                 self._apply_filter()
+                target = existing
+            added = len(samples_to_add)
+            total = len(target.lab_samples)
+            messagebox.showinfo(
+                t("dlg_color_result"),
+                t("dlg_color_append_ok", added=added, total=total, lab=lab_str, hex=result.hex_color),
+            )
         else:
             self.class_calibrated_lab_var.set(lab_str)
+            messagebox.showinfo(t("dlg_color_result"), t("dlg_color_ok", lab=lab_str, hex=result.hex_color))
 
-        calib_logger.info("Color sampled for %s lab=%s hex=%s append=%s", label, lab_str, result.hex_color, append_mode)
-        messagebox.showinfo(t("dlg_color_result"), t("dlg_color_ok", lab=lab_str, hex=result.hex_color))
+        calib_logger.info(
+            "Color sampled for %s lab=%s hex=%s append=%s n=%d",
+            label, lab_str, result.hex_color, append_mode, len(result.lab_samples or []),
+        )

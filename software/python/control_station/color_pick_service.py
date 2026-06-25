@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional
 
 import cv2
@@ -15,6 +15,11 @@ class ColorSampleResult:
     lab_values: List[float]
     bgr_values: List[int]
     hex_color: str
+    lab_samples: List[List[float]] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if not self.lab_samples:
+            self.lab_samples = [list(self.lab_values)]
 
 
 def _bgr_to_hex(b: int, g: int, r: int) -> str:
@@ -141,6 +146,7 @@ def run_color_pick(
         if key in (ord("s"), ord("S")) and samples:
             all_labs = np.array([s["lab"] for s in samples])
             avg_lab = np.mean(all_labs, axis=0).tolist()
+            individual = [s["lab"] for s in samples]
 
             avg_lab_pixel = np.array([[avg_lab]], dtype=np.float32).astype(np.uint8)
             avg_bgr_pixel = cv2.cvtColor(avg_lab_pixel, cv2.COLOR_Lab2BGR)
@@ -150,6 +156,7 @@ def run_color_pick(
                 lab_values=avg_lab,
                 bgr_values=[b, g, r],
                 hex_color=_bgr_to_hex(b, g, r),
+                lab_samples=individual,
             )
             break
 

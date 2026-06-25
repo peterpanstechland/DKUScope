@@ -299,8 +299,12 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     "profile_recalc_ok": {"zh_CN": "已从样本重算 Lab 范围。", "en_US": "Lab range recalculated from samples."},
     "samples_clear_confirm": {"zh_CN": "确定清除该类型的全部 Lab 样本？", "en_US": "Clear all Lab samples for this type?"},
     "dlg_color_append_hint": {
-        "zh_CN": "请在各相机/位置对该颜色多次点击采样；每次点击会追加到样本池并重算全局范围。",
-        "en_US": "Click multiple times across cameras/positions; each click appends to the sample pool and updates the global range.",
+        "zh_CN": "可在画面中多次点击，每次点击保留一个独立 Lab 样本。\n按 S 保存：本次所有点击会一次性追加到样本池并重算范围。\nR 重置本次点击，Q 取消。",
+        "en_US": "Click multiple times; each click adds one Lab sample.\nPress S to append all clicks at once and recalc the range.\nR=reset session, Q=quit.",
+    },
+    "dlg_color_append_ok": {
+        "zh_CN": "已追加 {added} 个样本（共 {total} 个）。\n均值 Lab：{lab}\nHEX：{hex}",
+        "en_US": "Added {added} sample(s) ({total} total).\nMean Lab: {lab}\nHEX: {hex}",
     },
     "sect_detection_algo": {"zh_CN": "检测算法", "en_US": "Detection Algorithm"},
     "chk_det_enabled": {"zh_CN": "启用增强检测（掩膜+空桌参考）", "en_US": "Enhanced detection (mask + bg ref)"},
