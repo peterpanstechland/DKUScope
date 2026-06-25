@@ -21,5 +21,9 @@ venv/
 *.log
 
 *.toe.autosave
+*.[0-9].toe
+*.zip
 Backup/
 .cursor/
+1.pdf
+*.scene
