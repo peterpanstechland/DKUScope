@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from typing import List
 
-from .calibration_service import run_four_point_calibration
+from .camera_calibration_tab import CameraCalibrationTab
 from .camera_preview import CameraPreviewWidget
 from .camera_service import enumerate_cameras, test_camera
 from .color_pick_service import run_color_pick
@@ -89,14 +89,17 @@ class ControlStationApp(tk.Tk):
         notebook = ttk.Notebook(body)
         notebook.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
         self.tab_general = ttk.Frame(notebook, padding=12)
+        self.tab_cameras = ttk.Frame(notebook, padding=0)
         self.tab_classes = ttk.Frame(notebook, padding=12)
         self.tab_layout = ttk.Frame(notebook, padding=12)
         self.tab_detection = ttk.Frame(notebook, padding=12)
         notebook.add(self.tab_general, text=t("tab_general"))
+        notebook.add(self.tab_cameras, text=t("tab_cameras"))
         notebook.add(self.tab_classes, text=t("tab_classes"))
         notebook.add(self.tab_layout, text=t("tab_layout"))
         notebook.add(self.tab_detection, text=t("tab_detection"))
         self._build_general_tab()
+        self._build_cameras_tab()
         self._build_classes_tab()
         self._build_layout_tab()
         self._build_detection_tab()
@@ -136,17 +139,6 @@ class ControlStationApp(tk.Tk):
         opts.pack(fill=tk.X, pady=(0, 4))
         self.preview_grid_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(opts, text=t("chk_grid_overlay"), variable=self.preview_grid_var, command=self._on_preview_grid_toggle).pack(side=tk.LEFT)
-        self.calib_status_var = tk.StringVar(value=t("not_calibrated"))
-        ttk.Label(opts, textvariable=self.calib_status_var).pack(side=tk.RIGHT)
-
-        calib_row = ttk.Frame(panel)
-        calib_row.pack(fill=tk.X, pady=(0, 2))
-        ttk.Label(calib_row, text=t("lbl_calib_target")).pack(side=tk.LEFT)
-        self.calib_target_var = tk.StringVar(value=t("calib_target_global"))
-        self.calib_target_combo = ttk.Combobox(calib_row, textvariable=self.calib_target_var, state="readonly", width=14)
-        self.calib_target_combo["values"] = [t("calib_target_global")]
-        self.calib_target_combo.pack(side=tk.LEFT, padx=4)
-        ttk.Button(calib_row, text=t("btn_bottom_calib"), command=self.on_open_calibration_wizard).pack(side=tk.LEFT, padx=2, fill=tk.X, expand=True)
 
         ttk.Separator(panel, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
 
@@ -199,6 +191,30 @@ class ControlStationApp(tk.Tk):
         except ValueError:
             rows, cols = 4, 8
         self.camera_preview.configure_grid_overlay(self.preview_grid_var.get(), rows, cols)
+
+    def _build_cameras_tab(self) -> None:
+        self.camera_cal_tab = CameraCalibrationTab(
+            self.tab_cameras,
+            get_global_camera_settings=self._get_global_camera_settings,
+            get_grid_size=self._get_grid_size,
+        )
+        self.camera_cal_tab.pack(fill=tk.BOTH, expand=True)
+
+    def _get_global_camera_settings(self) -> tuple[int, int, int]:
+        try:
+            return (
+                int(self.cam_width_var.get()),
+                int(self.cam_height_var.get()),
+                int(self.cam_fps_var.get()),
+            )
+        except ValueError:
+            return 640, 480, 30
+
+    def _get_grid_size(self) -> tuple[int, int]:
+        try:
+            return int(self.grid_rows_var.get()), int(self.grid_cols_var.get())
+        except ValueError:
+            return 4, 8
 
     # ── general tab ─────────────────────────────────────────
 
@@ -397,7 +413,6 @@ class ControlStationApp(tk.Tk):
         self.plate_studs_w_var.set(str(cfg.block.plate_studs_w))
         self.plate_studs_h_var.set(str(cfg.block.plate_studs_h))
         self.plate_size_cm_var.set(str(cfg.block.plate_size_cm))
-        self._refresh_calibration_status()
         self.proj_cam_var.set(str(cfg.projection.projector_camera_index))
         self.proj_w_var.set(str(cfg.projection.projector_width))
         self.proj_h_var.set(str(cfg.projection.projector_height))
@@ -418,11 +433,23 @@ class ControlStationApp(tk.Tk):
         self.layout_enabled_var.set(cfg.layout.enabled)
         self.layout_rows_var.set(str(cfg.layout.layout_rows))
         self.layout_cols_var.set(str(cfg.layout.layout_cols))
+        self._sync_unit_tree(cfg.layout.units)
+        self.camera_cal_tab.load_units(
+            cfg.layout.units,
+            cfg.layout.enabled,
+            cfg.layout.layout_rows,
+            cfg.layout.layout_cols,
+        )
+        self._refresh_detection_monitor_colors()
+
+    def _sync_unit_tree(self, units: List[TableUnitConfig]) -> None:
         for item in self.unit_tree.get_children():
             self.unit_tree.delete(item)
-        for u in cfg.layout.units:
-            self.unit_tree.insert("", tk.END, values=(u.unit_id, u.camera_index, u.grid_row_offset, u.grid_col_offset, u.grid_rows, u.grid_cols))
-        self._refresh_detection_monitor_colors()
+        for u in units:
+            self.unit_tree.insert("", tk.END, values=(
+                u.unit_id, u.camera_index, u.grid_row_offset, u.grid_col_offset,
+                u.grid_rows, u.grid_cols,
+            ))
 
     def _collect_config_from_form(self) -> ProjectConfig:
         cfg = self.config_data
@@ -463,10 +490,21 @@ class ControlStationApp(tk.Tk):
         cfg.classes = classes
 
         units: List[TableUnitConfig] = []
-        for iid in self.unit_tree.get_children():
-            row = self.unit_tree.item(iid, "values")
-            units.append(TableUnitConfig(unit_id=str(row[0]), camera_index=int(row[1]), grid_row_offset=int(row[2]), grid_col_offset=int(row[3]), grid_rows=int(row[4]), grid_cols=int(row[5])))
-        cfg.layout = LayoutConfig(enabled=self.layout_enabled_var.get(), layout_rows=int(self.layout_rows_var.get()), layout_cols=int(self.layout_cols_var.get()), units=units)
+        layout_enabled, layout_rows, layout_cols, units = self.camera_cal_tab.collect_units()
+        cfg.layout = LayoutConfig(
+            enabled=layout_enabled,
+            layout_rows=layout_rows,
+            layout_cols=layout_cols,
+            units=units,
+        )
+        self.layout_enabled_var.set(layout_enabled)
+        self.layout_rows_var.set(str(layout_rows))
+        self.layout_cols_var.set(str(layout_cols))
+        self._sync_unit_tree(units)
+        if len(units) == 1:
+            cfg.camera.index = units[0].camera_index
+            if units[0].calibration.enabled:
+                cfg.calibration = units[0].calibration
         return cfg
 
     # ── camera actions ──────────────────────────────────────
@@ -477,14 +515,8 @@ class ControlStationApp(tk.Tk):
         self.camera_combo["values"] = values
         if self.camera_index_var.get() not in values:
             self.camera_index_var.set(values[0])
+        self.camera_cal_tab.set_camera_values(values)
         self.status_var.set(t("cameras_found", n=len(self.cameras)))
-
-    def _refresh_calibration_status(self) -> None:
-        c = self.config_data.calibration
-        if c.enabled and len(c.source_points) == 4:
-            self.calib_status_var.set(t("calibrated_fmt", w=c.output_width, h=c.output_height))
-        else:
-            self.calib_status_var.set(t("not_calibrated"))
 
     def _refresh_projection_status(self) -> None:
         p = self.config_data.projection
@@ -492,20 +524,6 @@ class ControlStationApp(tk.Tk):
             self.proj_status_var.set(t("calibrated_fmt", w=p.projector_width, h=p.projector_height))
         else:
             self.proj_status_var.set(t("not_calibrated"))
-
-    def _refresh_calib_targets(self) -> None:
-        targets = [t("calib_target_global")]
-        for iid in self.unit_tree.get_children():
-            row = self.unit_tree.item(iid, "values")
-            targets.append(f"Unit {row[0]} (cam {row[1]})")
-        self.calib_target_combo["values"] = targets
-        self.calib_target_var.set(targets[0])
-
-    def _get_selected_unit_id(self) -> str | None:
-        val = self.calib_target_var.get()
-        if val == t("calib_target_global"):
-            return None
-        return val.split(" ")[1]
 
     # ── detection actions ─────────────────────────────────
 
@@ -565,6 +583,7 @@ class ControlStationApp(tk.Tk):
         self.config_data = config
         self._refresh_detection_monitor_colors()
         self.camera_preview.stop()
+        self.camera_cal_tab.stop_all_previews()
         try:
             self.detection_runner.start(config, port=port, target_fps=fps)
         except Exception as exc:
@@ -585,41 +604,6 @@ class ControlStationApp(tk.Tk):
             messagebox.showinfo(t("dlg_cam_test"), t("dlg_cam_ok"))
         else:
             messagebox.showwarning(t("dlg_cam_test"), t("dlg_cam_fail"))
-
-    def on_open_calibration_wizard(self) -> None:
-        try:
-            idx, w, h, fps = int(self.camera_index_var.get()), int(self.cam_width_var.get()), int(self.cam_height_var.get()), int(self.cam_fps_var.get())
-        except ValueError:
-            messagebox.showerror(t("dlg_param_error"), t("dlg_check_num"))
-            return
-        messagebox.showinfo(t("dlg_calib_hint_title"), t("dlg_calib_hint"))
-        result = run_four_point_calibration(idx, w, h, fps)
-        if result is None:
-            messagebox.showwarning(t("dlg_calib_result"), t("dlg_calib_fail"))
-            return
-
-        from .config_schema import CalibrationConfig
-        cal = CalibrationConfig(
-            enabled=True,
-            source_points=result.source_points,
-            destination_points=result.destination_points,
-            output_width=result.output_width,
-            output_height=result.output_height,
-        )
-
-        unit_id = self._get_selected_unit_id()
-        if unit_id is None:
-            self.config_data.calibration = cal
-            self._refresh_calibration_status()
-            messagebox.showinfo(t("dlg_calib_result"), t("dlg_calib_ok"))
-        else:
-            for u in self.config_data.layout.units:
-                if u.unit_id == unit_id:
-                    u.calibration = cal
-                    u.camera_index = idx
-                    break
-            self._refresh_calibration_status()
-            messagebox.showinfo(t("dlg_calib_result"), t("calib_saved_unit", uid=unit_id))
 
     def on_projection_calibration(self) -> None:
         try:
@@ -745,15 +729,27 @@ class ControlStationApp(tk.Tk):
             sub_r, sub_c = int(self.grid_rows_var.get()), int(self.grid_cols_var.get())
         except ValueError:
             sub_r, sub_c = 4, 8
-        for item in self.unit_tree.get_children():
-            self.unit_tree.delete(item)
+        sub_r = max(1, sub_r // lr)
+        sub_c = max(1, sub_c // lc)
+        units: List[TableUnitConfig] = []
         ci = 0
         for r in range(lr):
             for c in range(lc):
-                self.unit_tree.insert("", tk.END, values=(chr(65 + ci), ci, r * sub_r, c * sub_c, sub_r, sub_c))
+                units.append(TableUnitConfig(
+                    unit_id=chr(65 + ci),
+                    camera_index=ci,
+                    grid_row_offset=r * sub_r,
+                    grid_col_offset=c * sub_c,
+                    grid_rows=sub_r,
+                    grid_cols=sub_c,
+                ))
                 ci += 1
+        self.layout_enabled_var.set(True)
+        self.layout_rows_var.set(str(lr))
+        self.layout_cols_var.set(str(lc))
+        self.camera_cal_tab.load_units(units, True, lr, lc)
+        self._sync_unit_tree(units)
         self.status_var.set(t("units_generated", r=lr, c=lc, t=lr * lc))
-        self._refresh_calib_targets()
 
     def on_unit_selected(self, _event):
         sel = self.unit_tree.selection()
@@ -813,4 +809,5 @@ class ControlStationApp(tk.Tk):
     def destroy(self):
         self.detection_runner.stop()
         self.camera_preview.stop()
+        self.camera_cal_tab.stop_all_previews()
         super().destroy()
