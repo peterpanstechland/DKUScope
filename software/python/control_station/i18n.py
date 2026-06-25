@@ -217,6 +217,34 @@ _STRINGS: Dict[str, Dict[str, str]] = {
     "pos_bl": {"zh_CN": "左下", "en_US": "Bottom-left"},
     "pos_br": {"zh_CN": "右下", "en_US": "Bottom-right"},
     "pos_slot_fmt": {"zh_CN": "第{row}行第{col}列", "en_US": "Row {row} Col {col}"},
+    "btn_check_update": {"zh_CN": "检查更新", "en_US": "Check Update"},
+    "lbl_app_version": {"zh_CN": "版本 {v}", "en_US": "v{v}"},
+    "ota_checking": {"zh_CN": "正在检查更新…", "en_US": "Checking for updates…"},
+    "ota_up_to_date": {
+        "zh_CN": "当前已是最新版本 ({v})。",
+        "en_US": "You are on the latest version ({v}).",
+    },
+    "ota_check_fail": {"zh_CN": "检查更新失败", "en_US": "Update Check Failed"},
+    "ota_check_fail_fmt": {"zh_CN": "无法获取更新信息：{err}", "en_US": "Could not check updates: {err}"},
+    "ota_available_title": {"zh_CN": "发现新版本", "en_US": "Update Available"},
+    "ota_available_fmt": {
+        "zh_CN": "当前版本：{current}\n最新版本：{latest}\n大小：{size}\n\n{notes}\n\n是否下载并安装？",
+        "en_US": "Current: {current}\nLatest: {latest}\nSize: {size}\n\n{notes}\n\nDownload and install now?",
+    },
+    "ota_downloading": {"zh_CN": "正在下载更新…", "en_US": "Downloading update…"},
+    "ota_download_fail": {"zh_CN": "下载失败", "en_US": "Download Failed"},
+    "ota_download_fail_fmt": {"zh_CN": "更新下载失败：{err}", "en_US": "Update download failed: {err}"},
+    "ota_ready_title": {"zh_CN": "更新已就绪", "en_US": "Update Ready"},
+    "ota_ready_fmt": {
+        "zh_CN": "新版本 {v} 已下载。程序将关闭并自动安装，完成后重新启动。\n\n本地 config 配置不会被覆盖。",
+        "en_US": "Version {v} is ready. The app will close, install the update, and restart.\n\nYour local config folder will be preserved.",
+    },
+    "ota_dev_ready_fmt": {
+        "zh_CN": "新版本 {v} 已下载到：\n{path}\n\n开发模式下无法自动安装，请在浏览器中打开 Release 页面手动更新。",
+        "en_US": "Version {v} downloaded to:\n{path}\n\nAuto-install is unavailable in dev mode. Open the release page to update manually.",
+    },
+    "ota_install_fail": {"zh_CN": "安装失败", "en_US": "Install Failed"},
+    "ota_no_notes": {"zh_CN": "（无更新说明）", "en_US": "(No release notes)"},
 }
 
 

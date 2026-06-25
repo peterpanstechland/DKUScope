@@ -37,6 +37,18 @@ jobs:
             echo "tag=v0.1.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Stamp build version
+        shell: python
+        run: |
+          import pathlib
+          import re
+          tag = "${{ steps.version.outputs.tag }}"
+          ver = tag.lstrip("v")
+          path = pathlib.Path("control_station/__init__.py")
+          text = path.read_text(encoding="utf-8")
+          text = re.sub(r'__version__ = "[^"]*"', f'__version__ = "{ver}"', text)
+          path.write_text(text, encoding="utf-8")
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

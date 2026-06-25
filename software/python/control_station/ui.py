@@ -19,6 +19,16 @@ from .config_schema import (
 from .detection_monitor import DetectionMonitorWidget
 from .detection_runner import DetectionRunner, DetectionStatus
 from .i18n import SUPPORTED_LANGUAGES, get_lang, set_lang, t
+from .ota_service import (
+    ReleaseInfo,
+    UpdateCheckResult,
+    UpdateWorker,
+    apply_update,
+    can_apply_update,
+    format_size,
+    get_current_version,
+    open_release_page,
+)
 from .projection_calibration_service import run_projection_calibration
 
 
@@ -29,6 +39,9 @@ class ControlStationApp(tk.Tk):
         self.config_data: ProjectConfig = load_config(default_config_path)
         self.cameras: list = []
         self.detection_runner = DetectionRunner(on_status=self._on_detection_status)
+        self._ota_worker: UpdateWorker | None = None
+        self._ota_staged_root: Path | None = None
+        self._ota_progress: tk.Toplevel | None = None
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -55,9 +68,13 @@ class ControlStationApp(tk.Tk):
         ttk.Button(top, text=t("btn_save"), command=self.on_save_file).pack(side=tk.LEFT, padx=4)
         ttk.Button(top, text=t("btn_save_default"), command=self.on_save_default).pack(side=tk.LEFT, padx=4)
         ttk.Button(top, text=t("btn_reset_form"), command=self._load_config_to_form).pack(side=tk.LEFT, padx=4)
+        ttk.Button(top, text=t("btn_check_update"), command=self.on_check_update).pack(side=tk.LEFT, padx=4)
 
         self.status_var = tk.StringVar(value=t("status_ready"))
         ttk.Label(top, textvariable=self.status_var).pack(side=tk.RIGHT, padx=(20, 0))
+
+        self.version_var = tk.StringVar(value=t("lbl_app_version", v=get_current_version()))
+        ttk.Label(top, textvariable=self.version_var).pack(side=tk.RIGHT, padx=(8, 0))
 
         self.lang_var = tk.StringVar(value=get_lang())
         lang_combo = ttk.Combobox(
@@ -73,6 +90,128 @@ class ControlStationApp(tk.Tk):
         if new_lang != get_lang():
             set_lang(new_lang)
             self._rebuild_ui()
+
+    # ── OTA update ──────────────────────────────────────────
+
+    def on_check_update(self) -> None:
+        if self._ota_worker and self._ota_worker._thread and self._ota_worker._thread.is_alive():
+            return
+        self.status_var.set(t("ota_checking"))
+        self._ota_worker = UpdateWorker(on_check_done=lambda r: self.after(0, lambda: self._on_update_checked(r)))
+        self._ota_worker.check_async()
+
+    def _on_update_checked(self, result: UpdateCheckResult) -> None:
+        self.status_var.set(t("status_ready"))
+        if result.error:
+            messagebox.showerror(t("ota_check_fail"), t("ota_check_fail_fmt", err=result.error))
+            return
+        if not result.latest:
+            messagebox.showerror(t("ota_check_fail"), t("ota_check_fail_fmt", err="No release"))
+            return
+        if not result.update_available:
+            messagebox.showinfo(t("btn_check_update"), t("ota_up_to_date", v=result.current_version))
+            return
+        latest = result.latest
+        notes = latest.body or t("ota_no_notes")
+        if len(notes) > 500:
+            notes = notes[:500] + "…"
+        if not messagebox.askyesno(
+            t("ota_available_title"),
+            t(
+                "ota_available_fmt",
+                current=result.current_version,
+                latest=latest.version,
+                size=format_size(latest.size),
+                notes=notes,
+            ),
+        ):
+            return
+        self._start_update_download(latest)
+
+    def _start_update_download(self, release: ReleaseInfo) -> None:
+        self._show_ota_progress(t("ota_downloading"))
+        self._ota_worker = UpdateWorker(
+            on_check_done=lambda _r: None,
+            on_download_progress=lambda done, total: self.after(
+                0, lambda d=done, t=total: self._update_ota_progress(d, t),
+            ),
+            on_download_done=lambda staged, err: self.after(
+                0, lambda s=staged, e=err: self._on_update_downloaded(release, s, e),
+            ),
+        )
+        self._ota_worker.download_async(release)
+
+    def _show_ota_progress(self, message: str) -> None:
+        if self._ota_progress:
+            self._ota_progress.destroy()
+        dlg = tk.Toplevel(self)
+        dlg.title(t("btn_check_update"))
+        dlg.transient(self)
+        dlg.grab_set()
+        dlg.resizable(False, False)
+        frame = ttk.Frame(dlg, padding=16)
+        frame.pack(fill=tk.BOTH, expand=True)
+        self._ota_progress_label = ttk.Label(frame, text=message)
+        self._ota_progress_label.pack(anchor="w", pady=(0, 8))
+        self._ota_progress_bar = ttk.Progressbar(frame, mode="indeterminate", length=320)
+        self._ota_progress_bar.pack(fill=tk.X)
+        self._ota_progress_bar.start(12)
+        self._ota_progress = dlg
+
+    def _update_ota_progress(self, downloaded: int, total: int) -> None:
+        if not self._ota_progress:
+            return
+        bar = self._ota_progress_bar
+        if total > 0:
+            if bar.cget("mode") != "determinate":
+                bar.stop()
+                bar.configure(mode="determinate", maximum=total)
+            bar["value"] = min(downloaded, total)
+            pct = int(downloaded * 100 / total)
+            self._ota_progress_label.configure(
+                text=f"{t('ota_downloading')} {pct}% ({format_size(downloaded)} / {format_size(total)})",
+            )
+        else:
+            self._ota_progress_label.configure(text=t("ota_downloading"))
+
+    def _close_ota_progress(self) -> None:
+        if self._ota_progress:
+            self._ota_progress.grab_release()
+            self._ota_progress.destroy()
+            self._ota_progress = None
+
+    def _on_update_downloaded(self, release: ReleaseInfo, staged_root: Path, err: Exception | None) -> None:
+        self._close_ota_progress()
+        if err:
+            messagebox.showerror(t("ota_download_fail"), t("ota_download_fail_fmt", err=str(err)))
+            return
+
+        self._ota_staged_root = staged_root
+        if can_apply_update():
+            if messagebox.askyesno(
+                t("ota_ready_title"),
+                t("ota_ready_fmt", v=release.version),
+            ):
+                self._install_downloaded_update(release)
+        else:
+            messagebox.showinfo(
+                t("ota_ready_title"),
+                t("ota_dev_ready_fmt", v=release.version, path=staged_root),
+            )
+            open_release_page(release.tag)
+
+    def _install_downloaded_update(self, release: ReleaseInfo) -> None:
+        if not self._ota_staged_root:
+            return
+        try:
+            self.detection_runner.stop()
+            self.camera_preview.stop()
+            self.camera_cal_tab.stop_all_previews()
+            apply_update(self._ota_staged_root)
+        except Exception as exc:
+            messagebox.showerror(t("ota_install_fail"), str(exc))
+            return
+        self.destroy()
 
     # ── body ────────────────────────────────────────────────
 
