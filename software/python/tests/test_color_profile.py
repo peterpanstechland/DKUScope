@@ -10,8 +10,10 @@ from control_station.color_profile import (
     ensure_class_color_profile,
     lab_in_range,
     profile_from_legacy_centroid,
+    replace_lab_samples,
 )
-from control_station.config_schema import BuildingClassConfig, DetectionConfig
+from control_station.config_manager import load_config, save_config
+from control_station.config_schema import BuildingClassConfig, DetectionConfig, ProjectConfig
 from control_station.detection_service import ColorClassifier
 
 
@@ -61,6 +63,32 @@ def test_append_lab_samples_batch():
     cls = BuildingClassConfig(class_id=1, label="test")
     append_lab_samples(cls, [[50.0, 160.0, 140.0], [54.0, 162.0, 138.0], [48.0, 158.0, 142.0]])
     assert len(cls.lab_samples) == 3
+
+
+def test_replace_lab_samples():
+    cls = BuildingClassConfig(
+        class_id=5,
+        label="pink",
+        lab_samples=[[193, 164, 123], [190, 162, 125], [195, 166, 121]],
+    )
+    replace_lab_samples(cls, [[200, 120, 105], [202, 118, 108]])
+    assert len(cls.lab_samples) == 2
+    assert cls.lab_centroid[0] == pytest.approx(201.0, abs=0.1)
+
+
+def test_lab_samples_roundtrip_save_load(tmp_path):
+    cls = BuildingClassConfig(
+        class_id=5,
+        label="pink",
+        lab_samples=[[193, 164, 123], [190, 162, 125], [195, 166, 121]],
+    )
+    ensure_class_color_profile(cls)
+    path = tmp_path / "project_config.json"
+    save_config(ProjectConfig(classes=[cls]), path)
+    loaded = load_config(path)
+    assert len(loaded.classes[0].lab_samples) == 3
+    ensure_class_color_profile(loaded.classes[0])
+    assert len(loaded.classes[0].lab_samples) == 3
 
 
 def test_lab_in_range_box():

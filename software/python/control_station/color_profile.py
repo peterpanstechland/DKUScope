@@ -93,6 +93,16 @@ def ensure_class_color_profile(
     return cls
 
 
+def replace_lab_samples(
+    cls: BuildingClassConfig,
+    labs: List[List[float]],
+    l_padding: float = DEFAULT_L_PADDING,
+    ab_padding: float = DEFAULT_AB_PADDING,
+) -> BuildingClassConfig:
+    cls.lab_samples = normalize_lab_samples(labs)
+    return ensure_class_color_profile(cls, l_padding=l_padding, ab_padding=ab_padding)
+
+
 def append_lab_samples(
     cls: BuildingClassConfig,
     labs: List[List[float]],

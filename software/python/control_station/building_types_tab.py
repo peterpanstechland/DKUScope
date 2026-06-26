@@ -5,7 +5,12 @@ from tkinter import messagebox, ttk
 from typing import Callable, List, Optional
 
 from .camera_pick_dialog import ask_camera_for_color_pick
-from .color_profile import append_lab_sample, append_lab_samples, ensure_class_color_profile
+from .color_profile import (
+    append_lab_sample,
+    append_lab_samples,
+    ensure_class_color_profile,
+    replace_lab_samples,
+)
 from .color_pick_service import run_color_pick
 from .config_schema import BuildingClassConfig, DetectionConfig, TableUnitConfig
 from .i18n import t
@@ -37,6 +42,8 @@ class BuildingTypesTab(ttk.Frame):
         self._enumerate_cameras = enumerate_cameras_fn
         self._get_detection_config = get_detection_config
         self._all_classes: List[BuildingClassConfig] = []
+        self._pending_color_samples: List[List[float]] = []
+        self._pending_color_class_id: Optional[int] = None
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -212,11 +219,13 @@ class BuildingTypesTab(ttk.Frame):
             calibrated_lab=calibrated_lab,
         )
         if existing:
-            cls.lab_samples = list(existing.lab_samples)
+            cls.lab_samples = [list(s) for s in existing.lab_samples]
             cls.lab_centroid = list(existing.lab_centroid)
             cls.lab_min = list(existing.lab_min)
             cls.lab_max = list(existing.lab_max)
             cls.lab_std = list(existing.lab_std)
+        elif self._pending_color_samples and self._pending_color_class_id == cls.class_id:
+            cls.lab_samples = [list(s) for s in self._pending_color_samples]
         elif calibrated_lab and len(calibrated_lab) == 3:
             cls.lab_samples = [list(calibrated_lab)]
         ensure_class_color_profile(cls)
@@ -342,6 +351,9 @@ class BuildingTypesTab(ttk.Frame):
         self._apply_filter()
         self.tree.selection_set(f"class-{cls.class_id}")
         self._profile_display(cls)
+        if self._pending_color_class_id == cls.class_id:
+            self._pending_color_samples = []
+            self._pending_color_class_id = None
         calib_logger.info("Building type saved id=%s label=%s", cls.class_id, cls.label)
         messagebox.showinfo(t("btn_save_type"), t("building_saved_fmt", name=cls.label))
 
@@ -463,6 +475,13 @@ class BuildingTypesTab(ttk.Frame):
             return
         lab_str = ",".join(f"{v:.1f}" for v in result.lab_values)
         self.class_color_hex_var.set(result.hex_color)
+        samples_to_add = result.lab_samples or [result.lab_values]
+        try:
+            pending_class_id = int(self.class_id_var.get()) if self.class_id_var.get().strip() else None
+        except ValueError:
+            pending_class_id = None
+        self._pending_color_samples = [list(s) for s in samples_to_add]
+        self._pending_color_class_id = pending_class_id
 
         if append_mode:
             class_id_str = self.class_id_var.get().strip()
@@ -475,7 +494,8 @@ class BuildingTypesTab(ttk.Frame):
                 cls = self._class_from_form()
                 if cls is None:
                     return
-                append_lab_samples(cls, samples_to_add)
+                if not cls.lab_samples:
+                    append_lab_samples(cls, samples_to_add)
                 self._all_classes.append(cls)
                 self._apply_filter()
                 self.tree.selection_set(f"class-{cls.class_id}")
@@ -500,7 +520,7 @@ class BuildingTypesTab(ttk.Frame):
                 try:
                     existing = self._find_class(int(class_id_str))
                     if existing:
-                        append_lab_samples(existing, result.lab_samples or [result.lab_values])
+                        replace_lab_samples(existing, samples_to_add)
                         self._profile_display(existing)
                         self._apply_filter()
                 except ValueError:
